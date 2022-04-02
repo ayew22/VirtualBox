@@ -228,6 +228,9 @@ public final class InvocationStubManager {
             if (BuildCompat.isR()) {
                 addInjector(new PermissionManagerStub());
             }
+            if (BuildCompat.isS()){
+
+            }
             if (UriGrantsManager.getService != null) {
                 addInjector(new UriGrantsManagerStub());
             }

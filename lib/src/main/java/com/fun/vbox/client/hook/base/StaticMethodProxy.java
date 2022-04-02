@@ -1,5 +1,7 @@
 package com.fun.vbox.client.hook.base;
 
+import java.lang.reflect.Method;
+
 /**
  * @author Lody
  */
