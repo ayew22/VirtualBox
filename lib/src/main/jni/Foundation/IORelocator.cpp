@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/user.h>
+#include <Substrate/And64InlineHook.hpp>
 
 #include "IORelocator.h"
 #include "SandboxFs.h"
@@ -121,6 +122,16 @@ hook_function(void *handle, const char *symbol, void *new_func, void **old_func)
         return;
     }
     MSHookFunction(addr, new_func, old_func);
+}
+
+static inline void
+hook_function64(void *handle, const char *symbol, void *new_func, void **old_func) {
+    void *addr = dlsym(handle, symbol);
+    if (addr == NULL) {
+        ALOGE("Not found symbol : %s", symbol);
+        return;
+    }
+    A64HookFunction(addr, new_func, old_func);
 }
 
 void IOUniformer::relocate(const char *orig_path, const char *new_path) {

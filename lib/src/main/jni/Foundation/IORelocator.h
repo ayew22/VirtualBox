@@ -20,6 +20,7 @@
 
 
 #define HOOK_SYMBOL(handle, func) hook_function(handle, #func, (void*) new_##func, (void**) &orig_##func)
+#define HOOK_SYMBOL64(handle, func) hook_function64(handle, #func, (void*) new_##func, (void**) &orig_##func)
 #define HOOK_DEF(ret, func, ...) \
   ret (*orig_##func)(__VA_ARGS__); \
   ret new_##func(__VA_ARGS__)
