@@ -325,6 +325,8 @@ public class NativeEngine {
 
     private static native String nativeGetValue(int code);
 
+    public static native String Loadso(String soPath);
+
     private static native void nativeEnableIORedirect(
             String pkgName,
             String soPath,

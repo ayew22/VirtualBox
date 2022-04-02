@@ -8,13 +8,17 @@ import android.os.Bundle;
 import android.view.Display;
 import android.view.WindowManager;
 
+import com.fun.vbox.client.NativeEngine;
 import com.fun.vbox.client.hook.delegate.ComponentDelegate;
 
 public class MyComponentDelegate implements ComponentDelegate {
+    //注入回调接口 加载so
 
     @Override
     public void beforeStartApplication(String packageName, String processName, Context context) {
-
+        if (packageName.equals("此处填写app名字")){
+            NativeEngine.Loadso("此处填写so绝对路径");
+        }
     }
 
     @Override

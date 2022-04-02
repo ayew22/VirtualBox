@@ -18,6 +18,7 @@ import android.widget.ProgressBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.OrientationHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -74,13 +75,12 @@ public class LaunchFragment extends Fragment implements HomeContract.HomeView {
         mUiHandler = new Handler(Looper.getMainLooper());
         bindViews(view);
         initLaunchpad();
-
         new HomePresenterImpl(this).start();
     }
 
     private void bindViews(View view) {
         mLoadingView = view.findViewById(R.id.pb_loading_app);
-        mLauncherView = view.findViewById(R.id.home_launcher);
+        mLauncherView = view.findViewById(R.id.recycler_view);
     }
 
     private void initLaunchpad() {

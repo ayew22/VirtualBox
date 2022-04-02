@@ -8,6 +8,8 @@
 #include <sys/wait.h>
 #include "VAJni.h"
 #include<sys/prctl.h>
+#include <string>
+
 
 const char *g_pkg = "com.xyz.vbox";
 
@@ -141,4 +143,14 @@ JNIEnv *ensureEnvCreated() {
 
 extern "C" __attribute__((constructor)) void _init(void) {
     IOUniformer::init_env_before_all();
+}
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_com_fun_vbox_client_NativeEngine_Loadso(JNIEnv *env, jclass clazz, jstring so_path) {
+    ScopeUtfString libPath(so_path);
+    void *handle;
+    handle = dlopen(libPath.c_str(),RTLD_NOW);
+    if (handle){
+
+    }
 }
