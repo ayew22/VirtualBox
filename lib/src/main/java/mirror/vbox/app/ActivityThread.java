@@ -46,6 +46,9 @@ public class ActivityThread {
     @MethodParams({IBinder.class, List.class})
     public static RefMethod<Void> performNewIntents;
     public static RefStaticObject<IInterface> sPackageManager;
+
+    public static RefStaticObject<IInterface> sPermissionManager;
+
     @MethodParams({IBinder.class, String.class, int.class, int.class, Intent.class})
     public static RefMethod<Void> sendActivityResult;
     public static RefMethod<IBinder> getApplicationThread;
