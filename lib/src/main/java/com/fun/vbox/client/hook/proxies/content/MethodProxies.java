@@ -24,66 +24,70 @@ import java.lang.reflect.Method;
 @Keep
 public class MethodProxies {
 
-    private static boolean isAppUri(Uri uri) {
-        ProviderInfo info = VPackageManager.get().resolveContentProvider(uri.getAuthority(), 0, VUserHandle.myUserId());
-        return info != null;
+    private static boolean isAppUri(Uri paramUri) {
+        VPackageManager vPackageManager = VPackageManager.get();
+        String str = paramUri.getAuthority();
+        int i = VUserHandle.myUserId();
+        boolean bool1 = false;
+        ProviderInfo providerInfo = vPackageManager.resolveContentProvider(str, 0, i);
+        boolean bool2 = bool1;
+        if (providerInfo != null) {
+            bool2 = bool1;
+            if (providerInfo.enabled)
+                bool2 = true;
+        }
+        return bool2;
     }
 
-    public static Object registerContentObserver(Object who, Method method, Object[] args) throws Throwable {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            if (args.length >= 5) {
-                args[4] = Build.VERSION_CODES.LOLLIPOP_MR1;
-            }
-        }
-        Uri uri = (Uri) args[0];
-        boolean notifyForDescendents = (boolean) args[1];
-        IContentObserver observer = (IContentObserver) args[2];
-        if (isAppUri(uri)) {
-            VContentService.get().registerContentObserver(uri, notifyForDescendents, observer);
-            return 0;
+    public static Object notifyChange(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
+        if (Build.VERSION.SDK_INT >= 24 && paramArrayOfObject.length >= 6)
+            paramArrayOfObject[5] = Integer.valueOf(22);
+        boolean bool1 = true;
+        IContentObserver iContentObserver = (IContentObserver)paramArrayOfObject[1];
+        boolean bool2 = ((Boolean)paramArrayOfObject[2]).booleanValue();
+        if (paramArrayOfObject[3] instanceof Integer) {
+            if ((((Integer)paramArrayOfObject[3]).intValue() & 0x1) == 0)
+                bool1 = false;
         } else {
-            MethodProxy.replaceFirstUserId(args);
-            return method.invoke(who, args);
-        }
-    }
-
-    public static Object unregisterContentObserver(Object who, Method method, Object[] args) throws Throwable {
-        IContentObserver observer = (IContentObserver) args[0];
-        VContentService.get().unregisterContentObserver(observer);
-        return method.invoke(who, args);
-    }
-
-    public static Object notifyChange(Object who, Method method, Object[] args) throws Throwable {
-        Uri uri;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            if (args.length >= 6) {
-                args[5] = Build.VERSION_CODES.LOLLIPOP_MR1;
-            }
+            bool1 = ((Boolean)paramArrayOfObject[3]).booleanValue();
         }
         if (BuildCompat.isR()) {
-            Uri[] uriArr = (Uri[]) args[0];
-            uri = (uriArr == null || uriArr.length <= 0) ? null : uriArr[0];
-        } else {
-            uri = (Uri) args[0];
-        }
-        if (uri != null && isAppUri(uri)) {
-            IContentObserver observer = (IContentObserver) args[1];
-            boolean observerWantsSelfNotifications = (boolean) args[2];
-            boolean syncToNetwork;
-            if (args[3] instanceof Integer) {
-                int flags = (int) args[3];
-                syncToNetwork = (flags & ContentResolver.NOTIFY_SYNC_TO_NETWORK) != 0;
-            } else {
-                syncToNetwork = (boolean) args[3];
+            MethodProxy.replaceLastUserId(paramArrayOfObject);
+            for (Uri uri1 : (Uri[])paramArrayOfObject[0]) {
+                if (isAppUri(uri1)) {
+                    VContentManager.get().notifyChange(uri1, iContentObserver, bool2, bool1, VUserHandle.myUserId());
+                } else {
+                    paramMethod.invoke(paramObject, paramArrayOfObject);
+                }
             }
-            VContentManager.get().notifyChange(uri, observer, observerWantsSelfNotifications, syncToNetwork, VUserHandle.myUserId());
-            return 0;
-        } else {
-            if (BuildCompat.isR()) {
-                MethodParameterUtils.replaceLastAppPkg(args);
-            }
-            MethodProxy.replaceLastUserId(args);
-            return method.invoke(who, args);
+            return Integer.valueOf(0);
         }
+        Uri uri = (Uri)paramArrayOfObject[0];
+        if (isAppUri(uri)) {
+            VContentManager.get().notifyChange(uri, iContentObserver, bool2, bool1, VUserHandle.myUserId());
+            return Integer.valueOf(0);
+        }
+        MethodProxy.replaceLastUserId(paramArrayOfObject);
+        return paramMethod.invoke(paramObject, paramArrayOfObject);
+    }
+
+    public static Object registerContentObserver(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
+        if (Build.VERSION.SDK_INT >= 24 && paramArrayOfObject.length >= 5)
+            paramArrayOfObject[4] = Integer.valueOf(22);
+        Uri uri = (Uri)paramArrayOfObject[0];
+        boolean bool = ((Boolean)paramArrayOfObject[1]).booleanValue();
+        IContentObserver iContentObserver = (IContentObserver)paramArrayOfObject[2];
+        if (isAppUri(uri)) {
+            VContentManager.get().registerContentObserver(uri, bool, iContentObserver, VUserHandle.myUserId());
+            return Integer.valueOf(0);
+        }
+        MethodProxy.replaceFirstUserId(paramArrayOfObject);
+        return paramMethod.invoke(paramObject, paramArrayOfObject);
+    }
+
+    public static Object unregisterContentObserver(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
+        IContentObserver iContentObserver = (IContentObserver)paramArrayOfObject[0];
+        VContentManager.get().unregisterContentObserver(iContentObserver);
+        return paramMethod.invoke(paramObject, paramArrayOfObject);
     }
 }
