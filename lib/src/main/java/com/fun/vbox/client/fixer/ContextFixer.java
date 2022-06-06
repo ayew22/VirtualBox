@@ -7,9 +7,12 @@ import android.os.Build;
 import com.fun.vbox.client.core.InvocationStubManager;
 import com.fun.vbox.client.core.VCore;
 import com.fun.vbox.client.hook.proxies.graphics.GraphicsStatsStub;
+import com.fun.vbox.helper.compat.BuildCompat;
 
 import mirror.vbox.app.ContextImpl;
 import mirror.vbox.app.ContextImplKitkat;
+import mirror.vbox.content.AttributionSource;
+import mirror.vbox.content.AttributionSourceState;
 import mirror.vbox.content.ContentResolverJBMR2;
 
 /**
@@ -54,6 +57,15 @@ public class ContextFixer {
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             ContentResolverJBMR2.mPackageName.set(context.getContentResolver(), hostPkg);
+        }
+        if (BuildCompat.isS()) {
+            //AttributionSource fix
+            Object attributionSource = AttributionSource.mAttributionSourceState.get(ContextImpl.mAttributionSource.get(context));
+            if (attributionSource != null) {
+                AttributionSourceState.packageName.set(attributionSource, hostPkg);
+                if (VCore.get().myUid() > 0)
+                    AttributionSourceState.uid.set(attributionSource, VCore.get().myUid());
+            }
         }
     }
 }

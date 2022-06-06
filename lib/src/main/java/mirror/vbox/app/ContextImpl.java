@@ -20,4 +20,7 @@ public class ContextImpl {
 
     @MethodParams({Context.class})
     public static RefMethod<Void> setOuterContext;
+
+    public static RefObject<Object> mAttributionSource;
+
 }
