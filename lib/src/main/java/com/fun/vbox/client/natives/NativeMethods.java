@@ -5,8 +5,10 @@ import android.hardware.Camera;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Build;
+import android.os.Parcelable;
 
 import com.fun.vbox.client.hook.utils.MethodParameterUtils;
+import com.fun.vbox.helper.compat.BuildCompat;
 
 import java.lang.reflect.Method;
 
