@@ -9,8 +9,10 @@ import android.os.Bundle;
 import android.os.IInterface;
 import android.os.ParcelFileDescriptor;
 
+import com.fun.vbox.client.core.VCore;
 import com.fun.vbox.client.hook.base.MethodBox;
 import com.fun.vbox.helper.compat.BuildCompat;
+import com.fun.vbox.helper.utils.Reflect;
 import com.fun.vbox.helper.utils.VLog;
 
 import java.lang.reflect.InvocationHandler;
@@ -159,10 +161,26 @@ public class ProviderHook implements InvocationHandler {
         }
         MethodBox methodBox = new MethodBox(method, mBase, args);
         int start = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 ? 1 : 0;
+        if (BuildCompat.isS()) {
+            // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r16:frameworks/base/core/java/android/content/IContentProvider.java
+            start = 1;
+        } else if (BuildCompat.isR()) {
+            // Android 11: https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/content/IContentProvider.java?q=IContentProvider&ss=android%2Fplatform%2Fsuperproject
+            start = 2;
+        }
         try {
             String name = method.getName();
             if ("call".equals(name)) {
                 Bundle extras;
+                if (BuildCompat.isS()) {
+                    // What's the fuck with Google???
+                    // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r1:frameworks/base/core/java/android/content/IContentProvider.java;l=123
+                    start = 2;
+                } else if (BuildCompat.isR()) {
+                    start = 3;
+                } else if (BuildCompat.isQ()) {
+                    start = 2;
+                }
                 try {
                     extras = (Bundle) args[start + 2];
                 } catch (Throwable ignore) {
@@ -177,9 +195,6 @@ public class ProviderHook implements InvocationHandler {
                 String arg = (String) args[start + 1];
                 return call(methodBox, methodName, arg, extras);
             } else if ("insert".equals(name)) {
-                if (BuildCompat.isR()) {
-                    start = 2;
-                }
                 Uri url = (Uri) args[start];
                 ContentValues initialValues = (ContentValues) args[start + 1];
                 return insert(methodBox, url, initialValues);
@@ -209,15 +224,15 @@ public class ProviderHook implements InvocationHandler {
                 String mode = (String) args[start + 1];
                 return openAssetFile(methodBox, url, mode);
             } else if ("query".equals(name)) {
-                if (BuildCompat.isR()) {
-                    start = 2;
-                }
                 Uri url;
                 try {
                     url = (Uri) args[start];
                 } catch (Throwable ignore) {
                     start = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 ? 1 : 0;
                     url = (Uri) args[start];
+                }
+                if (BuildCompat.isS()) {
+                    fixAttributionSource(args[0]);
                 }
                 String[] projection = (String[]) args[start + 1];
                 String selection = null;
@@ -254,5 +269,16 @@ public class ProviderHook implements InvocationHandler {
 
     public interface HookFetcher {
         ProviderHook fetch(boolean external, IInterface provider);
+    }
+
+
+    private void fixAttributionSource(Object attribution) {
+        try {
+            Object mAttributionSourceState = Reflect.on(attribution).get("mAttributionSourceState");
+            Reflect.on(mAttributionSourceState).set("uid", VCore.get().myUid());
+            Reflect.on(mAttributionSourceState).set("packageName", VCore.get().getHostPkg());
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 }
