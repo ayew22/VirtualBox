@@ -1627,6 +1627,12 @@ public class MethodProxies {
                     IInterface provider = ContentProviderHolderOreo.provider.get(holder);
                     if (provider != null) {
                         provider = VActivityManager.get().acquireProviderClient(userId, info);
+                        if (BuildCompat.isS()) {
+                            if (provider != null){
+                                //todo 待验证
+                                provider = ProviderHook.createProxy(false, name, provider);
+                            }
+                        }
                     }
                     if (provider == null) {
                         VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority + "(" + info.processName + ")");
