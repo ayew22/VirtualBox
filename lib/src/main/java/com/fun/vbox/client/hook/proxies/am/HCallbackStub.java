@@ -4,11 +4,13 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.IInterface;
 import android.os.Message;
 import android.os.RemoteException;
 
 import com.fun.vbox.client.VClient;
 import com.fun.vbox.client.core.VCore;
+import com.fun.vbox.client.hook.proxies.app.ActivityClientControllerStub;
 import com.fun.vbox.client.interfaces.IInjector;
 import com.fun.vbox.client.ipc.VActivityManager;
 import com.fun.vbox.helper.AvoidRecursive;
@@ -19,6 +21,7 @@ import com.fun.vbox.remote.StubActivityRecord;
 
 import java.util.List;
 
+import mirror.vbox.app.ActivityClient;
 import mirror.vbox.app.ActivityManagerNative;
 import mirror.vbox.app.ActivityThread;
 import mirror.vbox.app.ActivityThreadQ;
@@ -188,6 +191,20 @@ public class HCallbackStub implements Handler.Callback, IInjector {
         ClassLoader appClassLoader = VClient.get().getClassLoader(info.applicationInfo);
         intent.setExtrasClassLoader(appClassLoader);
         if (BuildCompat.isPie()) {
+            if (BuildCompat.isS() && ActivityThread.getLaunchingActivity != null) {
+                //
+                Object launchActivity = ActivityThread.getLaunchingActivity.call(VCore.mainThread(), new Object[] { token });
+                if (launchActivity != null) {
+                    Object compatInfo = ActivityThread.ActivityClientRecord.compatInfo.get(launchActivity);
+                    compatInfo = ActivityThread.getPackageInfoNoCheck.call(VCore.mainThread(), new Object[] { info.applicationInfo, compatInfo });
+                    ActivityThread.ActivityClientRecord.intent.set(launchActivity, intent);
+                    ActivityThread.ActivityClientRecord.activityInfo.set(launchActivity, info);
+                    ActivityThread.ActivityClientRecord.packageInfo.set(launchActivity, compatInfo);
+                }
+            }
+            if (BuildCompat.isS() && LaunchActivityItem.mActivityClientController != null && (IInterface)LaunchActivityItem.mActivityClientController.get(r) != null){
+                ActivityClient.ActivityClientControllerSingleton.mKnownInstance.set(ActivityClient.INTERFACE_SINGLETON.get(), ActivityClientControllerStub.getProxyInterface());
+            }
             LaunchActivityItem.mIntent.set(r, intent);
             LaunchActivityItem.mInfo.set(r, info);
         } else {

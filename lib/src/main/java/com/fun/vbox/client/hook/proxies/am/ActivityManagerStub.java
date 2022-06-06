@@ -80,6 +80,9 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
                     return 0;
                 }
             });
+            //android 12 getHistoricalProcessExitReasons
+            addMethodProxy(new ReplaceCallingPkgMethodProxy("getHistoricalProcessExitReasons"));
+
             addMethodProxy(new ResultStaticMethodProxy("registerUidObserver", 0));
             addMethodProxy(new ResultStaticMethodProxy("unregisterUidObserver", 0));
             addMethodProxy(new ReplaceLastPkgMethodProxy("getAppStartMode"));
@@ -105,8 +108,16 @@ public class ActivityManagerStub extends MethodInvocationProxy<MethodInvocationS
             addMethodProxy(new StaticMethodProxy("checkUriPermission") {
                 @Override
                 public Object call(Object who, Method method, Object... args) throws Throwable {
-                    return PackageManager.PERMISSION_GRANTED;
+//                    return PackageManager.PERMISSION_GRANTED;
+                    byte b = 0;
+                    if (args[0] instanceof android.net.Uri && args[0].toString().equals("content://telephony/carriers/preferapn")) {
+                        if (!VCore.get().checkSelfPermission("Manifest.permission.WRITE_APN_SETTINGS", VCore.get().isExtPackage()))
+                            b = -1;
+                        return Integer.valueOf(b);
+                    }
+                    return Integer.valueOf(0);
                 }
+
             });
             addMethodProxy(new StaticMethodProxy("finishActivity") {
                 @Override

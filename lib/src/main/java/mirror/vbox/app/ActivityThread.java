@@ -49,6 +49,10 @@ public class ActivityThread {
     @MethodParams({IBinder.class, String.class, int.class, int.class, Intent.class})
     public static RefMethod<Void> sendActivityResult;
     public static RefMethod<IBinder> getApplicationThread;
+    public static RefMethod<ActivityClientRecord> getLaunchingActivity;
+    public static RefMethod<Object> getPackageInfoNoCheck;
+
+
 
     public static Object installProvider(Object mainThread, Context context, ProviderInfo providerInfo, Object holder) throws Throwable {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
@@ -61,8 +65,11 @@ public class ActivityThread {
         public static Class<?> TYPE = RefClass.load(ActivityClientRecord.class, "android.app.ActivityThread$ActivityClientRecord");
         public static RefObject<Activity> activity;
         public static RefObject<ActivityInfo> activityInfo;
+        public static RefObject  packageInfo;
         public static RefObject<Intent> intent;
         public static RefObject<IBinder> token;
+        public static RefObject<Object> compatInfo;
+
     }
 
     public static class ProviderClientRecord {
