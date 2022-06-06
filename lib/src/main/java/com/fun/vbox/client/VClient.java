@@ -87,6 +87,7 @@ import mirror.vbox.content.ContentProviderHolderOreo;
 import mirror.vbox.content.res.CompatibilityInfo;
 import mirror.vbox.providers.Settings;
 import mirror.vbox.renderscript.RenderScriptCacheDir;
+import mirror.vbox.security.net.config.ApplicationConfig;
 import mirror.vbox.security.net.config.NetworkSecurityConfigProvider;
 import mirror.vbox.view.CompatibilityInfoHolder;
 import mirror.vbox.view.DisplayAdjustments;
@@ -521,6 +522,21 @@ public final class VClient extends IVClient.Stub {
         if (NetworkSecurityConfigProvider.install != null) {
             Security.removeProvider("AndroidNSSP");
             NetworkSecurityConfigProvider.install.call(context);
+        }
+        if (Build.VERSION.SDK_INT >= 30){
+            ApplicationConfig.setDefaultInstance.call(new Object[] { null });
+        }
+        //fix junit not found class (for wechat)
+        if (BuildCompat.isR() && data.appInfo.targetSdkVersion < 30) {
+            ClassLoader classLoader = LoadedApk.getClassLoader.call(data.info, new Object[0]);
+            if (Build.VERSION.SDK_INT >= 30){
+                Reflect.on(classLoader).set("parent", new ClassLoader() {
+                    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                        return name.startsWith("junit") ? VClient.class.getClassLoader().loadClass(name) : super.loadClass(name, resolve);
+                    }
+                });
+            }
+
         }
         try {
             mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
