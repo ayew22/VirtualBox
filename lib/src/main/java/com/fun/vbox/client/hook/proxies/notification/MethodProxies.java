@@ -19,177 +19,148 @@ import java.lang.reflect.Method;
 @SuppressWarnings("unused")
 class MethodProxies {
 
-    static class EnqueueNotification extends MethodProxy {
-
-        @Override
-        public String getMethodName() {
-            return "enqueueNotification";
+    static class AreNotificationsEnabledForPackage extends MethodProxy {
+        public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+            String str = (String)param1VarArgs[0];
+            return getHostPkg().equals(str) ? param1Method.invoke(param1Object, param1VarArgs) : Boolean.valueOf(VNotificationManager.get().areNotificationsEnabledForPackage(str, getAppUserId()));
         }
 
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            String pkg = (String) args[0];
-            if (getHostPkg().equals(pkg)) {
-                return method.invoke(who, args);
-            }
-            int notificationIndex = ArrayUtils.indexOfFirst(args, Notification.class);
-            int idIndex = ArrayUtils.indexOfFirst(args, Integer.class);
-            int id = (int) args[idIndex];
-            id = VNotificationManager.get().dealNotificationId(id, pkg, null, getAppUserId());
-            args[idIndex] = id;
-            Notification notification = (Notification) args[notificationIndex];
-            if (!VNotificationManager.get().dealNotification(id, notification, pkg)) {
-                return 0;
-            }
-            VNotificationManager.get().addNotification(id, null, pkg, getAppUserId());
-            args[0] = getHostPkg();
-            return method.invoke(who, args);
+        public String getMethodName() {
+            return "areNotificationsEnabledForPackage";
         }
     }
 
-    /* package */ static class EnqueueNotificationWithTag extends MethodProxy {
-
-        @Override
-        public String getMethodName() {
-            return "enqueueNotificationWithTag";
+    static class CancelAllNotifications extends MethodProxy {
+        public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+            String str = MethodParameterUtils.replaceFirstAppPkg(param1VarArgs);
+            if (VCore.get().isAppInstalled(str)) {
+                VNotificationManager.get().cancelAllNotification(str, getAppUserId());
+                return Integer.valueOf(0);
+            }
+            replaceLastUserId(param1VarArgs);
+            return param1Method.invoke(param1Object, param1VarArgs);
         }
 
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            String pkg = (String) args[0];
-            if (getHostPkg().equals(pkg)) {
-                return method.invoke(who, args);
+        public String getMethodName() {
+            return "cancelAllNotifications";
+        }
+    }
+
+    static class CancelNotificationWithTag extends MethodProxy {
+        public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+            byte b2;
+            boolean bool = BuildCompat.isR();
+            byte b1 = 2;
+            if (bool) {
+                b2 = 3;
+            } else {
+                b2 = 2;
             }
+            if (!BuildCompat.isR())
+                b1 = 1;
+            String str1 = MethodParameterUtils.replaceFirstAppPkg(param1VarArgs);
+            replaceLastUserId(param1VarArgs);
+            if (getHostPkg().equals(str1))
+                return param1Method.invoke(param1Object, param1VarArgs);
+            String str2 = (String)param1VarArgs[b1];
+            int i = ((Integer)param1VarArgs[b2]).intValue();
+            i = VNotificationManager.get().dealNotificationId(i, str1, str2, getAppUserId());
+            param1VarArgs[b1] = VNotificationManager.get().dealNotificationTag(i, str1, str2, getAppUserId());
+            param1VarArgs[b2] = Integer.valueOf(i);
+            return param1Method.invoke(param1Object, param1VarArgs);
+        }
+
+        public String getMethodName() {
+            return "cancelNotificationWithTag";
+        }
+    }
+
+    static class EnqueueNotification extends MethodProxy {
+        public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+            String str = (String)param1VarArgs[0];
+            replaceLastUserId(param1VarArgs);
+            if (getHostPkg().equals(str))
+                return param1Method.invoke(param1Object, param1VarArgs);
+            int i = ArrayUtils.indexOfFirst(param1VarArgs, Notification.class);
+            int j = ArrayUtils.indexOfFirst(param1VarArgs, Integer.class);
+            int k = ((Integer)param1VarArgs[j]).intValue();
+            k = VNotificationManager.get().dealNotificationId(k, str, null, getAppUserId());
+            param1VarArgs[j] = Integer.valueOf(k);
+            Notification notification = (Notification)param1VarArgs[i];
+            if (!VNotificationManager.get().dealNotification(k, notification, str))
+                return Integer.valueOf(0);
+            VNotificationManager.get().addNotification(k, null, str, getAppUserId());
+            param1VarArgs[0] = getHostPkg();
+            return param1Method.invoke(param1Object, param1VarArgs);
+        }
+
+        public String getMethodName() {
+            return "enqueueNotification";
+        }
+    }
+
+    static class EnqueueNotificationWithTag extends MethodProxy {
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            boolean bool;
+            String pkg = (String)args[0];
+            replaceLastUserId(args);
+            if (getHostPkg().equals(pkg))
+                return method.invoke(who, args);
             int notificationIndex = ArrayUtils.indexOfFirst(args, Notification.class);
             int idIndex = ArrayUtils.indexOfFirst(args, Integer.class);
+            int id = ((Integer)args[idIndex]).intValue();
             int tagIndex = (Build.VERSION.SDK_INT >= 18 ? 2 : 1);
-            int id = (int) args[idIndex];
             String tag = (String) args[tagIndex];
 
             id = VNotificationManager.get().dealNotificationId(id, pkg, tag, getAppUserId());
             tag = VNotificationManager.get().dealNotificationTag(id, pkg, tag, getAppUserId());
-            args[idIndex] = id;
+            args[idIndex] = Integer.valueOf(id);
             args[tagIndex] = tag;
-            //key(tag,id)
-            Notification notification = (Notification) args[notificationIndex];
-            if (!VNotificationManager.get().dealNotification(id, notification, pkg)) {
-                return 0;
-            }
+            Notification notification = (Notification)args[notificationIndex];
+            if (!VNotificationManager.get().dealNotification(id, notification, pkg))
+                return Integer.valueOf(0);
             VNotificationManager.get().addNotification(id, tag, pkg, getAppUserId());
             args[0] = getHostPkg();
-            if (Build.VERSION.SDK_INT >= 18 && args[1] instanceof String) {
+            if (Build.VERSION.SDK_INT >= 18 && args[1] instanceof String)
                 args[1] = getHostPkg();
-            }
             return method.invoke(who, args);
+        }
+
+        public String getMethodName() {
+            return "enqueueNotificationWithTag";
         }
     }
 
-    /* package */ static class EnqueueNotificationWithTagPriority extends EnqueueNotificationWithTag {
-
-        @Override
+    static class EnqueueNotificationWithTagPriority extends EnqueueNotificationWithTag {
         public String getMethodName() {
             return "enqueueNotificationWithTagPriority";
         }
     }
 
-    /* package */ static class CancelNotificationWithTag extends MethodProxy {
+    static class GetAppActiveNotifications extends MethodProxy {
+        public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+            param1VarArgs[0] = getHostPkg();
+            replaceLastUserId(param1VarArgs);
+            return param1Method.invoke(param1Object, param1VarArgs);
+        }
 
-        @Override
         public String getMethodName() {
-            return "cancelNotificationWithTag";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            String pkg = MethodParameterUtils.replaceFirstAppPkg(args);
-            if (getHostPkg().equals(pkg)) {
-                return method.invoke(who, args);
-            }
-            char c2 = 1;
-            if (BuildCompat.isR()) {
-                args[1] = getHostPkg();
-                c2 = 2;
-            }
-            String tag = (String) args[c2];
-            args[c2] = VNotificationManager.get().dealNotificationTag(0, pkg, tag, getAppUserId());
-            try {
-                return method.invoke(who, args);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    }
-
-    /**
-     *
-     */
-    /* package */ static class CancelAllNotifications extends MethodProxy {
-
-        @Override
-        public String getMethodName() {
-            return "cancelAllNotifications";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            String pkg = MethodParameterUtils.replaceFirstAppPkg(args);
-            if (VCore.get().isAppInstalled(pkg)) {
-                VNotificationManager.get().cancelAllNotification(pkg, getAppUserId());
-                return 0;
-            }
-            return method.invoke(who, args);
-        }
-    }
-
-    static class AreNotificationsEnabledForPackage extends MethodProxy {
-        @Override
-        public String getMethodName() {
-            return "areNotificationsEnabledForPackage";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            String pkg = (String) args[0];
-            if (getHostPkg().equals(pkg)) {
-                return method.invoke(who, args);
-            }
-            return VNotificationManager.get().areNotificationsEnabledForPackage(pkg, getAppUserId());
+            return "getAppActiveNotifications";
         }
     }
 
     static class SetNotificationsEnabledForPackage extends MethodProxy {
-        @Override
+        public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+            String str = (String)param1VarArgs[0];
+            if (getHostPkg().equals(str))
+                return param1Method.invoke(param1Object, param1VarArgs);
+            boolean bool = ((Boolean)param1VarArgs[ArrayUtils.indexOfFirst(param1VarArgs, Boolean.class)]).booleanValue();
+            VNotificationManager.get().setNotificationsEnabledForPackage(str, bool, getAppUserId());
+            return Integer.valueOf(0);
+        }
+
         public String getMethodName() {
             return "setNotificationsEnabledForPackage";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            String pkg = (String) args[0];
-            if (getHostPkg().equals(pkg)) {
-                return method.invoke(who, args);
-            }
-            int enableIndex = ArrayUtils.indexOfFirst(args, Boolean.class);
-            boolean enable = (boolean) args[enableIndex];
-            VNotificationManager.get().setNotificationsEnabledForPackage(pkg, enable, getAppUserId());
-            return 0;
-        }
-    }
-
-    static class GetAppActiveNotifications  extends MethodProxy{
-        @Override
-        public String getMethodName() {
-            return "getAppActiveNotifications";
-        }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            args[0] = getHostPkg();
-            if (args.length > 1) {
-                args[1] = 0;
-            }
-            return method.invoke(who, args);
         }
     }
 }

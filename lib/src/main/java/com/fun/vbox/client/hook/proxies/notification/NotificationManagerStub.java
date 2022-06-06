@@ -3,12 +3,20 @@ package com.fun.vbox.client.hook.proxies.notification;
 import android.os.Build;
 import android.os.IInterface;
 
+import com.fun.vbox.client.core.VCore;
+import com.fun.vbox.client.env.Constants;
 import com.fun.vbox.client.hook.annotations.Inject;
 import com.fun.vbox.client.hook.base.MethodInvocationProxy;
 import com.fun.vbox.client.hook.base.MethodInvocationStub;
+import com.fun.vbox.client.hook.base.MethodProxy;
 import com.fun.vbox.client.hook.base.ReplaceCallingPkgAndLastUserIdMethodProxy;
 import com.fun.vbox.client.hook.base.ReplaceCallingPkgMethodProxy;
+import com.fun.vbox.client.hook.base.ResultStaticMethodProxy;
+import com.fun.vbox.client.hook.base.StaticMethodProxy;
+import com.fun.vbox.client.hook.utils.MethodParameterUtils;
 import com.fun.vbox.helper.compat.BuildCompat;
+
+import java.lang.reflect.Method;
 
 import mirror.vbox.app.NotificationManager;
 import mirror.vbox.widget.Toast;
@@ -22,42 +30,106 @@ import mirror.vbox.widget.Toast;
 public class NotificationManagerStub extends MethodInvocationProxy<MethodInvocationStub<IInterface>> {
 
     public NotificationManagerStub() {
-        super(new MethodInvocationStub<IInterface>(NotificationManager.getService.call()));
+        super(new MethodInvocationStub<IInterface>(NotificationManager.getService.call(new Object[0])));
     }
 
     @Override
     protected void onBindMethods() {
         super.onBindMethods();
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("enqueueToast"));
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("enqueueToastEx"));
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("cancelToast"));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("removeAutomaticZenRules"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("getImportance"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("areNotificationsEnabled"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("setNotificationPolicy"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("getNotificationPolicy"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("setNotificationPolicyAccessGranted"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("isNotificationPolicyAccessGranted"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("isNotificationPolicyAccessGrantedForPackage"));
+        addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("enqueueToast"));
+        addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("enqueueToastForLog"));
+        addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("enqueueToastEx"));
+        addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("cancelToast"));
+        if (Build.VERSION.SDK_INT >= 24) {
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("removeAutomaticZenRules"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("getImportance"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("areNotificationsEnabled"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("setNotificationPolicy"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("getNotificationPolicy"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("setNotificationPolicyAccessGranted"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("isNotificationPolicyAccessGranted"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("isNotificationPolicyAccessGrantedForPackage"));
         }
-        if ("samsung".equalsIgnoreCase(Build.BRAND) || "samsung".equalsIgnoreCase(Build.MANUFACTURER)) {
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("removeEdgeNotification"));
+        if ("samsung".equalsIgnoreCase(Build.BRAND) || "samsung".equalsIgnoreCase(Build.MANUFACTURER))
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("removeEdgeNotification"));
+        if (BuildCompat.isOreo()) {
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("createNotificationChannelGroups"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("getNotificationChannelGroups"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("deleteNotificationChannelGroup"));
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("createNotificationChannels"));
+            if (BuildCompat.isQ()) {
+                addMethodProxy(new MethodProxy() {
+                    public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+                        param1VarArgs[0] = VCore.get().getHostPkg();
+                        param1VarArgs[1] = VCore.get().getHostPkg();
+                        replaceLastUserId(param1VarArgs);
+                        return super.call(param1Object, param1Method, param1VarArgs);
+                    }
+
+                    public String getMethodName() {
+                        return "getNotificationChannels";
+                    }
+                });
+            } else {
+                addMethodProxy((MethodProxy)new ReplaceCallingPkgAndLastUserIdMethodProxy("getNotificationChannels"));
+            }
+            if (BuildCompat.isQ()) {
+                addMethodProxy(new MethodProxy() {
+                    public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+                        param1VarArgs[0] = VCore.get().getHostPkg();
+                        param1VarArgs[2] = VCore.get().getHostPkg();
+                        replaceLastUserId(param1VarArgs);
+                        return super.call(param1Object, param1Method, param1VarArgs);
+                    }
+
+                    public String getMethodName() {
+                        return "getNotificationChannel";
+                    }
+                });
+                addMethodProxy((MethodProxy)new ResultStaticMethodProxy("setNotificationDelegate", null));
+                addMethodProxy((MethodProxy)new ResultStaticMethodProxy("getNotificationDelegate", null));
+                addMethodProxy((MethodProxy)new ResultStaticMethodProxy("canNotifyAsPackage", Boolean.valueOf(false)));
+            } else {
+                addMethodProxy((MethodProxy)new ReplaceCallingPkgAndLastUserIdMethodProxy("getNotificationChannel"));
+            }
+            addMethodProxy(new MethodProxy() {
+                public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+                    MethodParameterUtils.replaceFirstAppPkg(param1VarArgs);
+                    if (param1VarArgs != null && param1VarArgs.length >= 2 && param1VarArgs[1] instanceof String && Constants.NOTIFICATION_DAEMON_CHANNEL.equals(param1VarArgs[1]))
+                        return null;
+                    try {
+                        return super.call(param1Object, param1Method, param1VarArgs);
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                        return null;
+                    }
+                }
+
+                public String getMethodName() {
+                    return "deleteNotificationChannel";
+                }
+            });
         }
-
-        if(BuildCompat.isOreo()) {
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("createNotificationChannelGroups"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("getNotificationChannelGroups"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("deleteNotificationChannelGroup"));
-
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("createNotificationChannels"));
-
-            addMethodProxy(new ReplaceCallingPkgAndLastUserIdMethodProxy("getNotificationChannels"));
-            addMethodProxy(new ReplaceCallingPkgAndLastUserIdMethodProxy("getNotificationChannel"));
-            addMethodProxy(new ReplaceCallingPkgMethodProxy("deleteNotificationChannel"));
-        }
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("setInterruptionFilter"));
-        addMethodProxy(new ReplaceCallingPkgMethodProxy("getPackageImportance"));
+        if (BuildCompat.isPie())
+            addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("getNotificationChannelGroup"));
+        addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("setInterruptionFilter"));
+        addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("getPackageImportance"));
+        addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("shouldGroupPkg"));
+        addMethodProxy((MethodProxy)new ReplaceCallingPkgMethodProxy("getBubblePreferenceForPackage"));
+        addMethodProxy((MethodProxy)new StaticMethodProxy("getConversationNotificationChannel") {
+            public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+                param1VarArgs[0] = VCore.get().getHostPkg();
+                param1VarArgs[2] = VCore.get().getHostPkg();
+                return super.call(param1Object, param1Method, param1VarArgs);
+            }
+        });
+        addMethodProxy((MethodProxy)new StaticMethodProxy("getConversationNotificationChannel") {
+            public Object call(Object param1Object, Method param1Method, Object... param1VarArgs) throws Throwable {
+                param1VarArgs[0] = VCore.get().getHostPkg();
+                param1VarArgs[2] = VCore.get().getHostPkg();
+                return super.call(param1Object, param1Method, param1VarArgs);
+            }
+        });
     }
 
     @Override
@@ -68,6 +140,6 @@ public class NotificationManagerStub extends MethodInvocationProxy<MethodInvocat
 
     @Override
     public boolean isEnvBad() {
-        return NotificationManager.getService.call() != getInvocationStub().getProxyInterface();
+        return NotificationManager.getService.call(new Object[0]) != getInvocationStub().getProxyInterface();
     }
 }
