@@ -43,5 +43,12 @@ public class TelephonyRegistryStub extends BinderInvocationProxy {
                 return super.beforeCall(who, method, args);
             }
         });
+
+
+        //12 error listenWithEventList
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("addOnSubscriptionsChangedListener"));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("addOnOpportunisticSubscriptionsChangedListener"));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("removeOnSubscriptionsChangedListener"));
+        addMethodProxy(new ReplaceCallingPkgMethodProxy("listenWithEventList"));
     }
 }
