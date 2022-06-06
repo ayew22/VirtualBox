@@ -2,13 +2,18 @@ package com.fun.vbox.client.hook.proxies.appops;
 
 import android.annotation.TargetApi;
 import android.app.AppOpsManager;
+import android.app.SyncNotedAppOp;
 import android.os.Build;
 
 import com.fun.vbox.GmsSupport;
 import com.fun.vbox.client.core.VCore;
+import com.fun.vbox.client.hook.utils.MethodParameterUtils;
 import com.fun.vbox.helper.Keep;
+import com.fun.vbox.helper.compat.BuildCompat;
 
 import java.lang.reflect.Method;
+
+import mirror.vbox.content.AttributionSource;
 
 /**
  * @author Lody
@@ -61,6 +66,11 @@ public class MethodProxies {
 
 
     public static Object noteProxyOperation(Object who, Method method, Object[] args) throws Throwable {
+        if (BuildCompat.isS()) {
+            int i = MethodParameterUtils.getIndex(args, AttributionSource.TYPE);
+            if (i >= 0)
+                return new SyncNotedAppOp(0, AttributionSource.getAttributionTag.call(args[i]));
+        }
         return 0;
     }
 
