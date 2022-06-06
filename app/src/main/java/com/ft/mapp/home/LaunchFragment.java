@@ -75,12 +75,13 @@ public class LaunchFragment extends Fragment implements HomeContract.HomeView {
         mUiHandler = new Handler(Looper.getMainLooper());
         bindViews(view);
         initLaunchpad();
+
         new HomePresenterImpl(this).start();
     }
 
     private void bindViews(View view) {
         mLoadingView = view.findViewById(R.id.pb_loading_app);
-        mLauncherView = view.findViewById(R.id.recycler_view);
+        mLauncherView = view.findViewById(R.id.home_launcher);
     }
 
     private void initLaunchpad() {
