@@ -102,8 +102,11 @@ public class NativeMethods {
     private static Method getMediaRecorderNativeSetup(){
         Method native_setup = null;
         try {
-            native_setup = MediaRecorder.class.getDeclaredMethod("native_setup",
-                    Object.class, String.class, String.class);
+            if (BuildCompat.isS()) {
+                native_setup = MediaRecorder.class.getDeclaredMethod("native_setup", Object.class, String.class, Parcelable.class);
+            } else {
+                native_setup = MediaRecorder.class.getDeclaredMethod("native_setup",  Object.class, String.class, String.class );
+            }
         } catch (NoSuchMethodException e) {
             //ignore
         }
