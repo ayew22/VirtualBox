@@ -211,7 +211,7 @@ public class MethodInvocationStub<T> {
                 try {
                     argStr = Arrays.toString(args);
                     argStr = argStr.substring(1, argStr.length() - 1);
-                    VLog.e(TAG, "[Throwable] "+ method.getName() + "=>" + argStr, exception);
+                    VLog.e(TAG, "[Throwable] "+ method.getName() + "=>" + argStr+" %s", VLog.getStackTraceString(exception));
                 } catch (Throwable e) {
                     //
                 }
