@@ -532,7 +532,10 @@ public final class VClient extends IVClient.Stub {
             if (Build.VERSION.SDK_INT >= 30){
                 Reflect.on(classLoader).set("parent", new ClassLoader() {
                     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                        return name.startsWith("junit") ? VClient.class.getClassLoader().loadClass(name) : super.loadClass(name, resolve);
+                        if(name.startsWith("junit") || name.startsWith("org.apache.http")|| name.startsWith("org.apache.commons")){
+                            return VClient.class.getClassLoader().loadClass(name);
+                        }
+                        return  super.loadClass(name, resolve);
                     }
                 });
             }
