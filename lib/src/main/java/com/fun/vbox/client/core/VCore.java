@@ -92,6 +92,9 @@ public final class VCore {
      */
     private Object mainThread;
     private Context context;
+
+    private boolean isMainPackage;
+
     /**
      * Main ProcessName
      */
@@ -292,6 +295,10 @@ public final class VCore {
             StubManifest.PROXY_CP_AUTHORITY_64BIT = packageName64 + ".provider_proxy_64bit";
 
             this.context = context;
+
+            this.isMainPackage = context.getPackageName().equals(StubManifest.PACKAGE_NAME);
+
+
             unHookPackageManager = context.getPackageManager();
             mHostPkgInfo = unHookPackageManager.getPackageInfo(packageName, PackageManager.GET_GIDS);
             detectProcessType();
@@ -608,6 +615,10 @@ public final class VCore {
     @Deprecated
     public InstallResult installPackage(String apkPath, InstallOptions options) {
         return installPackageSync(apkPath, options);
+    }
+
+    public boolean isExtPackage() {
+        return this.isMainPackage ^ true;
     }
 
     public interface InstallCallback {

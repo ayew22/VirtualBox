@@ -10,6 +10,7 @@ import com.fun.vbox.client.hook.proxies.account.AccountManagerStub;
 import com.fun.vbox.client.hook.proxies.alarm.AlarmManagerStub;
 import com.fun.vbox.client.hook.proxies.am.ActivityManagerStub;
 import com.fun.vbox.client.hook.proxies.am.HCallbackStub;
+import com.fun.vbox.client.hook.proxies.app.ActivityClientControllerStub;
 import com.fun.vbox.client.hook.proxies.appops.AppOpsManagerStub;
 import com.fun.vbox.client.hook.proxies.appops.FlymePermissionServiceStub;
 import com.fun.vbox.client.hook.proxies.appops.SmtOpsManagerStub;
@@ -229,8 +230,8 @@ public final class InvocationStubManager {
                 addInjector(new PermissionManagerStub());
             }
             if (BuildCompat.isS()){
-
-            }
+                addInjector(new ActivityClientControllerStub());
+             }
             if (UriGrantsManager.getService != null) {
                 addInjector(new UriGrantsManagerStub());
             }
