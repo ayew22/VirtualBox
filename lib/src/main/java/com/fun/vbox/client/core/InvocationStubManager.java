@@ -22,6 +22,7 @@ import com.fun.vbox.client.hook.proxies.bluetooth.BluetoothStub;
 import com.fun.vbox.client.hook.proxies.clipboard.ClipBoardStub;
 import com.fun.vbox.client.hook.proxies.connectivity.ConnectivityStub;
 import com.fun.vbox.client.hook.proxies.content.ContentServiceStub;
+import com.fun.vbox.client.hook.proxies.content.integrity.AppIntegrityManagerStub;
 import com.fun.vbox.client.hook.proxies.context_hub.ContextHubServiceStub;
 import com.fun.vbox.client.hook.proxies.devicepolicy.DevicePolicyManagerStub;
 import com.fun.vbox.client.hook.proxies.display.DisplayStub;
@@ -38,8 +39,10 @@ import com.fun.vbox.client.hook.proxies.media.router.MediaRouterServiceStub;
 import com.fun.vbox.client.hook.proxies.media.session.SessionManagerStub;
 import com.fun.vbox.client.hook.proxies.mount.MountServiceStub;
 import com.fun.vbox.client.hook.proxies.network.NetworkManagementStub;
+import com.fun.vbox.client.hook.proxies.network.TetheringConnectorStub;
 import com.fun.vbox.client.hook.proxies.notification.NotificationManagerStub;
 import com.fun.vbox.client.hook.proxies.os.DeviceIdentifiersPolicyServiceHub;
+import com.fun.vbox.client.hook.proxies.os.StatsManagerServiceStub;
 import com.fun.vbox.client.hook.proxies.permission.PermissionManagerStub;
 import com.fun.vbox.client.hook.proxies.permission.UriGrantsManagerStub;
 import com.fun.vbox.client.hook.proxies.persistent_data_block.PersistentDataBlockServiceStub;
@@ -228,6 +231,9 @@ public final class InvocationStubManager {
             }
             if (BuildCompat.isR()) {
                 addInjector(new PermissionManagerStub());
+                addInjector(new AppIntegrityManagerStub());
+                addInjector(new StatsManagerServiceStub());
+                addInjector(new TetheringConnectorStub());
             }
             if (BuildCompat.isS()){
                 addInjector(new ActivityClientControllerStub());
