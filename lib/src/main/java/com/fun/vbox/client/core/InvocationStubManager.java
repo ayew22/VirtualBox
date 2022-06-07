@@ -64,6 +64,7 @@ import com.fun.vbox.client.hook.proxies.telephony.TelephonyStub;
 import com.fun.vbox.client.hook.proxies.usage.UsageStatsManagerStub;
 import com.fun.vbox.client.hook.proxies.user.UserManagerStub;
 import com.fun.vbox.client.hook.proxies.vibrator.VibratorStub;
+import com.fun.vbox.client.hook.proxies.vibrator.VibratorStubForS;
 import com.fun.vbox.client.hook.proxies.view.AutoFillManagerStub;
 import com.fun.vbox.client.hook.proxies.wifi.WifiManagerStub;
 import com.fun.vbox.client.hook.proxies.window.WindowManagerStub;
@@ -170,8 +171,13 @@ public final class InvocationStubManager {
             addInjector(new ConnectivityStub());
             addInjector(new BluetoothStub());
 
-            if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR2) {
+            if (Build.VERSION.SDK_INT >= 31) {
+                addInjector(new VibratorStubForS());
+            } else {
                 addInjector(new VibratorStub());
+            }
+            if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR2) {
+//                addInjector(new VibratorStub());
                 addInjector(new WifiManagerStub());
                 addInjector(new ContextHubServiceStub());
             }
