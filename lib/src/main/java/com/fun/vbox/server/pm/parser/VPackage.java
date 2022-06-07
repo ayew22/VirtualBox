@@ -54,6 +54,10 @@ public class VPackage implements Parcelable {
     public String mVersionName;
     public String mSharedUserId;
     public ArrayList<String> usesLibraries;
+
+    public ArrayList<String> usesOptionalLibraries;
+
+
     public int mVersionCode;
     public int mSharedUserLabel;
     // Applications hardware preferences
@@ -110,6 +114,7 @@ public class VPackage implements Parcelable {
         this.mVersionName = in.readString();
         this.mSharedUserId = in.readString();
         this.usesLibraries = in.createStringArrayList();
+        this.usesOptionalLibraries = in.createStringArrayList();
         this.mVersionCode = in.readInt();
         this.mSharedUserLabel = in.readInt();
         this.configPreferences = in.createTypedArrayList(ConfigurationInfo.CREATOR);
@@ -216,6 +221,9 @@ public class VPackage implements Parcelable {
         dest.writeString(this.mVersionName);
         dest.writeString(this.mSharedUserId);
         dest.writeStringList(this.usesLibraries);
+
+        dest.writeStringList(this.usesOptionalLibraries);
+
         dest.writeInt(this.mVersionCode);
         dest.writeInt(this.mSharedUserLabel);
         dest.writeTypedList(this.configPreferences);

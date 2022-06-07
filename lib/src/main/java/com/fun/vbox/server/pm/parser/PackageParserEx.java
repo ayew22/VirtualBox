@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -215,12 +216,17 @@ public class PackageParserEx {
         cache.mSharedUserId = p.mSharedUserId;
         cache.mSharedUserLabel = p.mSharedUserLabel;
         cache.usesLibraries = p.usesLibraries;
+        cache.usesOptionalLibraries = p.usesOptionalLibraries;
         cache.mVersionCode = p.mVersionCode;
         cache.configPreferences = p.configPreferences;
         cache.reqFeatures = p.reqFeatures;
         addOwner(cache);
+
+//        updatePackageApache(cache);
         return cache;
     }
+
+
 
     private static Signature[] getSignature(PackageParser.Package p) {
         if (BuildCompat.isPie()) {
@@ -728,5 +734,36 @@ public class PackageParserEx {
         return (state.installed && !state.hidden)
                 || (flags & PackageManager.GET_UNINSTALLED_PACKAGES) != 0;
     }
+/*
+
+    private static void updatePackageApache(VPackage paramVPackage) {
+        if (paramVPackage.usesLibraries == null)
+            paramVPackage.usesLibraries = new ArrayList<>();
+        if (paramVPackage.usesOptionalLibraries == null)
+            paramVPackage.usesOptionalLibraries = new ArrayList<>();
+        if (paramVPackage.applicationInfo != null && paramVPackage.applicationInfo.targetSdkVersion < 28 && !isLibraryPresent(paramVPackage.usesLibraries, paramVPackage.usesOptionalLibraries, "org.apache.http.legacy"))
+            paramVPackage.usesLibraries.add(0, "org.apache.http.legacy");
+        if (paramVPackage.applicationInfo != null && !isLibraryPresent(paramVPackage.usesLibraries, paramVPackage.usesOptionalLibraries, "android.test.base"))
+            paramVPackage.usesLibraries.add(0, "android.test.base");
+    }
+
+    private static boolean isLibraryPresent(List<String> paramList1, List<String> paramList2, String paramString) {
+        if (paramList1 != null) {
+            Iterator<String> iterator = paramList1.iterator();
+            while (iterator.hasNext()) {
+                if (((String)iterator.next()).equals(paramString))
+                    return true;
+            }
+        }
+        if (paramList2 != null) {
+            Iterator<String> iterator = paramList2.iterator();
+            while (iterator.hasNext()) {
+                if (((String)iterator.next()).equals(paramString))
+                    return true;
+            }
+        }
+        return false;
+    }
+*/
 
 }

@@ -10,6 +10,8 @@ import android.content.pm.PermissionInfo;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
+import android.content.pm.SharedLibraryInfo;
+import android.content.pm.VersionedPackage;
 import android.os.RemoteException;
 
 import com.fun.vbox.client.core.VCore;
@@ -20,7 +22,12 @@ import com.fun.vbox.remote.ReceiverInfo;
 import com.fun.vbox.server.IPackageInstaller;
 import com.fun.vbox.server.interfaces.IPackageManager;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+
+import mirror.vbox.content.pm.ApplicationInfoN;
+import mirror.vbox.content.pm.ApplicationInfoP;
 
 @Keep
 public class VPackageManager {
@@ -179,7 +186,16 @@ public class VPackageManager {
 
     public ApplicationInfo getApplicationInfo(String packageName, int flags, int userId) {
         try {
-            return getService().getApplicationInfo(packageName, flags, userId);
+//            return getService().getApplicationInfo(packageName, flags, userId);
+            ApplicationInfo info = getService().getApplicationInfo(packageName, flags, userId);
+            if (info == null) {
+                return null;
+            }
+
+            List<String> sharedLibraries = getService().getSharedLibraries(packageName);
+            addSharedLibraries(info, sharedLibraries);
+
+            return info;
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e, null);
         }
@@ -314,5 +330,36 @@ public class VPackageManager {
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e, null);
         }
+    }
+
+    private void addSharedLibraries(ApplicationInfo info, List<String> libraries) {
+        List<SharedLibraryInfo> sharedLibsInfo = new ArrayList<>();
+
+        for (String libName : libraries) {
+            String path = String.format("/system/framework/%s.jar", libName);
+            if (new File(path).exists()) {
+                SharedLibraryInfo sharedLibraryInfo = addSharedLibrary(info, libName, path);
+                sharedLibsInfo.add(sharedLibraryInfo);
+            }
+        }
+
+        ApplicationInfoP.sharedLibraryInfos.set(info, sharedLibsInfo);
+    }
+
+    private SharedLibraryInfo addSharedLibrary(ApplicationInfo info, String name, String path) {
+        if (info.sharedLibraryFiles == null) {
+            info.sharedLibraryFiles = new String[]{path};
+        } else {
+            int newLength = info.sharedLibraryFiles.length + 1;
+            String[] newSharedLibraryFiles = new String[newLength];
+            System.arraycopy(info.sharedLibraryFiles, 0, newSharedLibraryFiles, 0, newLength - 1);
+            newSharedLibraryFiles[newLength - 1] = path;
+        }
+
+        return libNameToSharedLibraryInfo(path, name);
+    }
+
+    public static SharedLibraryInfo libNameToSharedLibraryInfo(String path, String name) {
+        return mirror.vbox.content.pm.SharedLibraryInfo.createSharedLibInfo(path, null, null, name, -1, 0, new VersionedPackage("android", 0), null, null, false);
     }
 }

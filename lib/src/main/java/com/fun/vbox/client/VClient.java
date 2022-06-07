@@ -527,12 +527,17 @@ public final class VClient extends IVClient.Stub {
             ApplicationConfig.setDefaultInstance.call(new Object[] { null });
         }
         //fix junit not found class (for wechat)
+        /*
         if (BuildCompat.isR() && data.appInfo.targetSdkVersion < 30) {
             ClassLoader classLoader = LoadedApk.getClassLoader.call(data.info, new Object[0]);
             if (Build.VERSION.SDK_INT >= 30){
                 Reflect.on(classLoader).set("parent", new ClassLoader() {
                     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                        if(name.startsWith("junit") || name.startsWith("org.apache.http")|| name.startsWith("org.apache.commons")){
+                        if(name.startsWith("junit")
+//                                || name.startsWith("org.apache.http")|| name.startsWith("org.apache.commons")
+//                                || name.startsWith("com.tencent.mobileqq")
+//                                || name.startsWith("java.nio")
+                        ){
                             return VClient.class.getClassLoader().loadClass(name);
                         }
                         return  super.loadClass(name, resolve);
@@ -541,6 +546,8 @@ public final class VClient extends IVClient.Stub {
             }
 
         }
+        */
+
         try {
             mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
         } catch (Throwable e) {
