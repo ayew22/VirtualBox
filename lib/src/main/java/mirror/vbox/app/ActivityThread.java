@@ -17,6 +17,7 @@ import android.os.IBinder;
 import android.os.IInterface;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +55,21 @@ public class ActivityThread {
     public static RefMethod<IBinder> getApplicationThread;
     public static RefMethod<ActivityClientRecord> getLaunchingActivity;
     public static RefMethod<Object> getPackageInfoNoCheck;
+
+    public static void handleNewIntent(Object paramObject, List paramList) {
+        try {
+            Object object = currentActivityThread.call(new Object[0]);
+            if (object != null) {
+                Method method = object.getClass().getDeclaredMethod("handleNewIntent", new Class[] { paramObject.getClass(), List.class });
+                if (method != null) {
+                    method.setAccessible(true);
+                    method.invoke(object, new Object[] { paramObject, paramList });
+                }
+            }
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+    }
 
 
 

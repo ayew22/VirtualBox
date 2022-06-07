@@ -277,6 +277,10 @@ public final class VClient extends IVClient.Stub {
                     data.token,
                     Collections.singletonList(intent),
                     true);
+        }else if (BuildCompat.isS()) {
+            data = (NewIntentData)(ActivityThread.mActivities.get(VCore.mainThread())).get(data.token);
+            if (data != null)
+                ActivityThread.handleNewIntent(data, Collections.singletonList(intent));
         } else {
             ActivityThreadQ.handleNewIntent.call(
                     VCore.mainThread(),
