@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.webkit.WebView;
 
 import com.ft.mapp.delegate.MyAppRequestListener;
@@ -18,6 +19,9 @@ import com.ft.mapp.open.ShortcutHandleActivity;
 import com.fun.vbox.client.core.HostApp;
 import com.fun.vbox.client.core.SettingConfig;
 import com.fun.vbox.client.core.VCore;
+import com.fun.vbox.helper.compat.BuildCompat;
+
+import org.lsposed.hiddenapibypass.HiddenApiBypass;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -101,9 +105,14 @@ public class VApp extends Application {
 
         mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
 
-        if (Build.VERSION.SDK_INT < 30) {
-            Reflection.unseal(base);
-        }
+//        if (Build.VERSION.SDK_INT < 30) {
+//            Reflection.unseal(base);
+//            Log.e("Reflection","use 11111");
+//        }
+
+        hiddenApi();
+
+
         HostApp.setApplication(this);
 
         try {
@@ -113,6 +122,13 @@ public class VApp extends Application {
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             closeAndroidPDialog();
+        }
+    }
+
+    private void hiddenApi() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+//            HiddenApiBypass.addHiddenApiExemptions("");//这个可以
+            HiddenApiBypass.setHiddenApiExemptions(new String[] { "L" });//这个也可以
         }
     }
 
@@ -184,8 +200,9 @@ public class VApp extends Application {
             Class<?> aClass = Class.forName("android.content.pm.PackageParser$Package");
             Constructor<?> declaredConstructor = aClass.getDeclaredConstructor(String.class);
             declaredConstructor.setAccessible(true);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             //
+            e.printStackTrace();
         }
         try {
             Class<?> cls = Class.forName("android.app.ActivityThread");
@@ -195,8 +212,9 @@ public class VApp extends Application {
             Field mHiddenApiWarningShown = cls.getDeclaredField("mHiddenApiWarningShown");
             mHiddenApiWarningShown.setAccessible(true);
             mHiddenApiWarningShown.setBoolean(activityThread, true);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
             //
+            e.printStackTrace();
         }
     }
 }

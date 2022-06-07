@@ -121,4 +121,7 @@ dependencies {
     implementation "com.google.code.gson:gson:2.8.6"
 
     implementation "org.jdeferred.v2:jdeferred-android-aar:2.0.0"
+
+    implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:4.3'
+
 }
