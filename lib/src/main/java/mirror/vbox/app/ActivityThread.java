@@ -56,6 +56,10 @@ public class ActivityThread {
     public static RefMethod<ActivityClientRecord> getLaunchingActivity;
     public static RefMethod<Object> getPackageInfoNoCheck;
 
+    public static RefMethod<Void> handleNewIntent;
+
+/*
+
     public static void handleNewIntent(Object paramObject, List paramList) {
         try {
             Object object = currentActivityThread.call(new Object[0]);
@@ -70,6 +74,7 @@ public class ActivityThread {
             exception.printStackTrace();
         }
     }
+*/
 
 
 

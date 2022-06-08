@@ -278,9 +278,11 @@ public final class VClient extends IVClient.Stub {
                     Collections.singletonList(intent),
                     true);
         }else if (BuildCompat.isS()) {
-            data = (NewIntentData)(ActivityThread.mActivities.get(VCore.mainThread())).get(data.token);
-            if (data != null)
-                ActivityThread.handleNewIntent(data, Collections.singletonList(intent));
+//            data = (NewIntentData)(ActivityThread.mActivities.get(VCore.mainThread())).get(data.token);//todo  android.app.ActivityThread$ActivityClientRecord cannot be cast to com.fun.vbox.client.VClient$NewIntentData
+//            if (data != null)
+//                ActivityThread.handleNewIntent(data, Collections.singletonList(intent));
+            Map activities = ActivityThread.mActivities.get(ActivityThread.currentActivityThread.call(null));
+            ActivityThread.handleNewIntent.call(VCore.mainThread(), activities.get(data.token), Collections.singletonList(intent));
         } else {
             ActivityThreadQ.handleNewIntent.call(
                     VCore.mainThread(),
