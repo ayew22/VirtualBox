@@ -13,80 +13,95 @@ import android.os.SystemClock;
  * @author Lody
  */
 public class ContentProviderCompat {
-
-    public static Bundle call(Context context, Uri uri, String method, String arg, Bundle extras, int retryCount) throws IllegalAccessException {
-        if (VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            return context.getContentResolver().call(uri, method, arg, extras);
-        }
-        ContentProviderClient client = acquireContentProviderClientRetry(context, uri, retryCount);
+    private static ContentProviderClient acquireContentProviderClient(Context paramContext, Uri paramUri) {
         try {
-            if (client == null) {
-                throw new IllegalAccessException();
-            }
-            return client.call(method, arg, extras);
-        } catch (RemoteException e) {
-            throw new IllegalAccessException(e.getMessage());
-        } finally {
-            releaseQuietly(client);
+            return (Build.VERSION.SDK_INT >= 16) ? paramContext.getContentResolver().acquireUnstableContentProviderClient(paramUri) : paramContext.getContentResolver().acquireContentProviderClient(paramUri);
+        } catch (SecurityException securityException) {
+            securityException.printStackTrace();
+            return null;
         }
     }
 
-
-    private static ContentProviderClient acquireContentProviderClient(Context context, Uri uri) {
-        try {
-            if (VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                return context.getContentResolver().acquireUnstableContentProviderClient(uri);
-            }
-            return context.getContentResolver().acquireContentProviderClient(uri);
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        }
-        return null;
+    private static ContentProviderClient acquireContentProviderClient(Context paramContext, String paramString) {
+        return (Build.VERSION.SDK_INT >= 16) ? paramContext.getContentResolver().acquireUnstableContentProviderClient(paramString) : paramContext.getContentResolver().acquireContentProviderClient(paramString);
     }
 
-    public static ContentProviderClient acquireContentProviderClientRetry(Context context, Uri uri, int retryCount) {
-        ContentProviderClient client = acquireContentProviderClient(context, uri);
-        if (client == null) {
-            int retry = 0;
-            while (retry < retryCount && client == null) {
-                SystemClock.sleep(100);
-                retry++;
-                client = acquireContentProviderClient(context, uri);
-            }
-        }
-        return client;
-    }
-
-    public static ContentProviderClient acquireContentProviderClientRetry(Context context, String name, int retryCount) {
-        ContentProviderClient client = acquireContentProviderClient(context, name);
-        if (client == null) {
-            int retry = 0;
-            while (retry < retryCount && client == null) {
-                SystemClock.sleep(100);
-                retry++;
-                client = acquireContentProviderClient(context, name);
-            }
-        }
-        return client;
-    }
-
-    private static ContentProviderClient acquireContentProviderClient(Context context, String name) {
-        if (VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            return context.getContentResolver().acquireUnstableContentProviderClient(name);
-        }
-        return context.getContentResolver().acquireContentProviderClient(name);
-    }
-
-    private static void releaseQuietly(ContentProviderClient client) {
-        if (client != null) {
-            try {
-                if (VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    client.close();
-                } else {
-                    client.release();
+    public static ContentProviderClient acquireContentProviderClientRetry(Context paramContext, Uri paramUri, int paramInt) {
+        ContentProviderClient contentProviderClient1 = acquireContentProviderClient(paramContext, paramUri);
+        ContentProviderClient contentProviderClient2 = contentProviderClient1;
+        if (contentProviderClient1 == null) {
+            byte b = 0;
+            while (true) {
+                contentProviderClient2 = contentProviderClient1;
+                if (b < paramInt) {
+                    contentProviderClient2 = contentProviderClient1;
+                    if (contentProviderClient1 == null) {
+                        SystemClock.sleep(100L);
+                        b++;
+                        contentProviderClient1 = acquireContentProviderClient(paramContext, paramUri);
+                        continue;
+                    }
                 }
-            } catch (Exception ignored) {
+                break;
             }
         }
+        return contentProviderClient2;
+    }
+
+    public static ContentProviderClient acquireContentProviderClientRetry(Context paramContext, String paramString, int paramInt) {
+        ContentProviderClient contentProviderClient1 = acquireContentProviderClient(paramContext, paramString);
+        ContentProviderClient contentProviderClient2 = contentProviderClient1;
+        if (contentProviderClient1 == null) {
+            byte b = 0;
+            while (true) {
+                contentProviderClient2 = contentProviderClient1;
+                if (b < paramInt) {
+                    contentProviderClient2 = contentProviderClient1;
+                    if (contentProviderClient1 == null) {
+                        SystemClock.sleep(100L);
+                        b++;
+                        contentProviderClient1 = acquireContentProviderClient(paramContext, paramString);
+                        continue;
+                    }
+                }
+                break;
+            }
+        }
+        return contentProviderClient2;
+    }
+
+    public static Bundle call(Context paramContext, Uri paramUri, String paramString1, String paramString2, Bundle paramBundle, int paramInt) throws IllegalAccessException {
+        IllegalAccessException illegalAccessException;
+        if (Build.VERSION.SDK_INT < 17)
+            return paramContext.getContentResolver().call(paramUri, paramString1, paramString2, paramBundle);
+        ContentProviderClient contentProviderClient = acquireContentProviderClientRetry(paramContext, paramUri, paramInt);
+        if (contentProviderClient != null) {
+            try {
+                Bundle bundle = contentProviderClient.call(paramString1, paramString2, paramBundle);
+                releaseQuietly(contentProviderClient);
+                return bundle;
+            } catch (RemoteException remoteException) {
+                illegalAccessException = new IllegalAccessException();
+//                this(remoteException.getMessage());
+                throw illegalAccessException;
+            } finally {}
+        } else {
+            illegalAccessException = new IllegalAccessException();
+//            this();
+            throw illegalAccessException;
+        }
+//        releaseQuietly(contentProviderClient);
+//        throw illegalAccessException;
+    }
+
+    private static void releaseQuietly(ContentProviderClient paramContentProviderClient) {
+        if (paramContentProviderClient != null)
+            try {
+                if (Build.VERSION.SDK_INT >= 24) {
+                    paramContentProviderClient.close();
+                } else {
+                    paramContentProviderClient.release();
+                }
+            } catch (Exception exception) {}
     }
 }
