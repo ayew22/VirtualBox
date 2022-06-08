@@ -14,6 +14,7 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.content.pm.Signature;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.text.TextUtils;
 
@@ -624,6 +625,12 @@ public class PackageParserEx {
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
         }
+
+        if (!copyNeeded(flags, p, state, null, userId)) {
+            initApplicationAsUser(p.applicationInfo, userId);
+            return p.applicationInfo;
+        }
+
         // Make shallow copy so we can store the metadata/libraries safely
         ApplicationInfo ai = new ApplicationInfo(p.applicationInfo);
         if ((flags & PackageManager.GET_META_DATA) != 0) {
@@ -733,6 +740,15 @@ public class PackageParserEx {
         //noinspection deprecation
         return (state.installed && !state.hidden)
                 || (flags & PackageManager.GET_UNINSTALLED_PACKAGES) != 0;
+    }
+
+    private static boolean copyNeeded(int flags, VPackage p,
+                                      PackageUserState state, Bundle metaData, int userId) {
+        if (!state.installed || state.hidden) {
+            return true;
+        }
+        return (flags & PackageManager.GET_META_DATA) != 0
+                && (metaData != null || p.mAppMetaData != null);
     }
 /*
 

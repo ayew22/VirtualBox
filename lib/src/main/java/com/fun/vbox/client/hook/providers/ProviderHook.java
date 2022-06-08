@@ -10,6 +10,7 @@ import android.os.IInterface;
 import android.os.ParcelFileDescriptor;
 
 import com.fun.vbox.client.core.VCore;
+import com.fun.vbox.client.fixer.ContextFixer;
 import com.fun.vbox.client.hook.base.MethodBox;
 import com.fun.vbox.helper.compat.BuildCompat;
 import com.fun.vbox.helper.utils.Reflect;
@@ -168,6 +169,9 @@ public class ProviderHook implements InvocationHandler {
             // Android 11: https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/content/IContentProvider.java?q=IContentProvider&ss=android%2Fplatform%2Fsuperproject
             start = 2;
         }
+        if (BuildCompat.isS() ) {
+            tryFixAttributionSource(args);
+        }
         try {
             String name = method.getName();
             if ("call".equals(name)) {
@@ -231,9 +235,9 @@ public class ProviderHook implements InvocationHandler {
                     start = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 ? 1 : 0;
                     url = (Uri) args[start];
                 }
-                if (BuildCompat.isS()) {
+               /* if (BuildCompat.isS()) {
                     fixAttributionSource(args[0]);
-                }
+                }*/
                 String[] projection = (String[]) args[start + 1];
                 String selection = null;
                 String[] selectionArgs = null;
@@ -272,7 +276,7 @@ public class ProviderHook implements InvocationHandler {
     }
 
 
-    private void fixAttributionSource(Object attribution) {
+   /* private void fixAttributionSource(Object attribution) {
         try {
             Object mAttributionSourceState = Reflect.on(attribution).get("mAttributionSourceState");
             Reflect.on(mAttributionSourceState).set("uid", VCore.get().myUid());
@@ -280,5 +284,20 @@ public class ProviderHook implements InvocationHandler {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+    }*/
+
+    private void tryFixAttributionSource(Object[] args) {
+        if (args == null || args.length == 0) {
+            return;
+        }
+        Object attribution = args[0];
+        if (attribution == null) {
+            return;
+        }
+        if (!attribution.getClass().getName().equals("android.content.AttributionSource")) {
+            return;
+        }
+
+        ContextFixer.fixAttributionSource(attribution, VCore.get().getHostPkg(), VCore.get().myUid());
     }
 }

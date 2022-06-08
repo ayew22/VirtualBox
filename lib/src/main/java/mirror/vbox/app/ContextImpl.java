@@ -23,4 +23,7 @@ public class ContextImpl {
 
     public static RefObject<Object> mAttributionSource;
 
+    public static RefMethod<Object> getAttributionSource;
+
+
 }

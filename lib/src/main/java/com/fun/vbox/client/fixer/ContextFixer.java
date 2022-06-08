@@ -4,10 +4,12 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.os.Build;
 
+import com.fun.vbox.client.VClient;
 import com.fun.vbox.client.core.InvocationStubManager;
 import com.fun.vbox.client.core.VCore;
 import com.fun.vbox.client.hook.proxies.graphics.GraphicsStatsStub;
 import com.fun.vbox.helper.compat.BuildCompat;
+import com.fun.vbox.helper.utils.Reflect;
 
 import mirror.vbox.app.ContextImpl;
 import mirror.vbox.app.ContextImplKitkat;
@@ -60,12 +62,32 @@ public class ContextFixer {
         }
         if (BuildCompat.isS()) {
             //AttributionSource fix
-            Object attributionSource = AttributionSource.mAttributionSourceState.get(ContextImpl.mAttributionSource.get(context));
+           /* Object attributionSource = AttributionSource.mAttributionSourceState.get(ContextImpl.mAttributionSource.get(context));
             if (attributionSource != null) {
                 AttributionSourceState.packageName.set(attributionSource, hostPkg);
                 if (VCore.get().myUid() > 0)
                     AttributionSourceState.uid.set(attributionSource, VCore.get().myUid());
+            }*/
+            if (ContextImpl.getAttributionSource != null) {
+                fixAttributionSource(ContextImpl.getAttributionSource.call(context), hostPkg, VClient.get().getVUid());
             }
+
+        }
+    }
+
+    public static void fixAttributionSource(Object attr, String pkg, int uid) {
+        if (attr == null) {
+            return;
+        }
+        try {
+            Object mAttributionSourceState = Reflect.on(attr).get("mAttributionSourceState");
+            Reflect.on(mAttributionSourceState).set("uid", uid);
+            Reflect.on(mAttributionSourceState).set("packageName", pkg);
+
+            Object next = Reflect.on(attr).call("getNext").get();
+            fixAttributionSource(next, pkg, uid);
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
     }
 }
