@@ -16,6 +16,7 @@ import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Parcel;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -282,7 +283,11 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 ps.appMode, ps.firstInstallTime, ps.lastUpdateTime, ps.readUserState(userId),
                 userId);
         if (packageInfo != null) {
-            return packageInfo;
+            Parcel parcel = Parcel.obtain();
+            packageInfo.writeToParcel(parcel, 0);
+            PackageInfo info = PackageInfo.CREATOR.createFromParcel(parcel);
+            parcel.recycle();
+            return info;
         }
         return null;
     }
