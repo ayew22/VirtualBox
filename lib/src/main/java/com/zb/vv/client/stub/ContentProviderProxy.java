@@ -31,225 +31,246 @@ import mirror.vbox.content.ContentProviderClientJB;
  */
 public class ContentProviderProxy extends ContentProvider {
 
-    private ContentProviderClient acquireProviderClient(TargetProviderInfo paramTargetProviderInfo) {
-        try {
-            IInterface iInterface = VActivityManager.get().acquireProviderClient(paramTargetProviderInfo.userId, paramTargetProviderInfo.info);
-            if (iInterface != null)
-                return (Build.VERSION.SDK_INT > 15) ? (ContentProviderClient)ContentProviderClientJB.ctor.newInstance(new Object[] { getContext().getContentResolver(), iInterface, Boolean.valueOf(true) }) : (ContentProviderClient)ContentProviderClientICS.ctor.newInstance(new Object[] { getContext().getContentResolver(), iInterface });
-        } catch (RemoteException remoteException) {
-            remoteException.printStackTrace();
+    private class TargetProviderInfo {
+        int userId;
+        ProviderInfo info;
+        Uri uri;
+
+        TargetProviderInfo(int userId, ProviderInfo info, Uri uri) {
+            this.userId = userId;
+            this.info = info;
+            this.uri = uri;
         }
-        return null;
     }
 
-    public static Uri buildProxyUri(int paramInt, boolean paramBoolean, String paramString, Uri paramUri) {
-        String str = StubManifest.getProxyAuthority(paramBoolean);
-        return Uri.withAppendedPath(Uri.parse(String.format(Locale.ENGLISH, "content://%1$s/%2$d/%3$s", new Object[] { str, Integer.valueOf(paramInt), paramString })), paramUri.toString());
+    public static Uri buildProxyUri(int userId, boolean is64bit, String authority, Uri uri) {
+        String proxyAuthority = StubManifest.getProxyAuthority(is64bit);
+        Uri proxyUriPrefix = Uri.parse(String.format(Locale.ENGLISH, "content://%1$s/%2$d/%3$s", proxyAuthority, userId, authority));
+        return Uri.withAppendedPath(proxyUriPrefix, uri.toString());
     }
 
-    private TargetProviderInfo getProviderProviderInfo(Uri paramUri) {
-        if (!VCore.get().isEngineLaunched())
+
+    private TargetProviderInfo getProviderProviderInfo(Uri uri) {
+        if (!VCore.get().isEngineLaunched()) {
             return null;
-        List<String> list = paramUri.getPathSegments();
-        if (list != null && list.size() >= 3) {
-            int b;
-            try {
-                b = Integer.parseInt(list.get(0));
-            } catch (NumberFormatException numberFormatException) {
-                numberFormatException.printStackTrace();
-                b = -1;
+        }
+        List<String> segments = uri.getPathSegments();
+        if (segments == null || segments.size() < 3) {
+            return null;
+        }
+        int userId = -1;
+        try {
+            userId = Integer.parseInt(segments.get(0));
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+        if (userId == -1) {
+            return null;
+        }
+        String authority = segments.get(1);
+        ProviderInfo providerInfo = VPackageManager.get().resolveContentProvider(authority, 0, userId);
+        if (providerInfo == null) {
+            return null;
+        }
+        String uriContent = uri.toString();
+        return new TargetProviderInfo(
+                userId,
+                providerInfo,
+                Uri.parse(uriContent.substring(authority.length() + uriContent.indexOf(authority, 1) + 1))
+        );
+    }
+
+    private ContentProviderClient acquireProviderClient(TargetProviderInfo info) {
+        try {
+            IInterface provider = VActivityManager.get().acquireProviderClient(info.userId, info.info);
+            if (provider != null) {
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                    return ContentProviderClientJB.ctor.newInstance(getContext().getContentResolver(), provider, true);
+                } else {
+                    return ContentProviderClientICS.ctor.newInstance(getContext().getContentResolver(), provider);
+                }
             }
-            if (b == -1)
-                return null;
-            String str = list.get(1);
-            ProviderInfo providerInfo = VPackageManager.get().resolveContentProvider(str, 0, b);
-            if (providerInfo != null && providerInfo.enabled) {
-                String str1 = paramUri.toString();
-                str = str1.substring(str.length() + str1.indexOf(str, 1) + 1);
-                str1 = str;
-                if (str.startsWith("content:/")) {
-                    str1 = str;
-                    if (!str.startsWith("content://"))
-                        str1 = str.replace("content:/", "content://");
-                }
-                return new TargetProviderInfo(b, providerInfo, Uri.parse(str1));
-            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
         return null;
     }
 
-    public ContentProviderClient acquireTargetProviderClient(Uri paramUri) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        return (targetProviderInfo != null) ? acquireProviderClient(targetProviderInfo) : null;
-    }
-
-    public Uri canonicalize(Uri paramUri) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
-                try {
-                    return contentProviderClient.canonicalize(targetProviderInfo.uri);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
-                }
+    public ContentProviderClient acquireTargetProviderClient(Uri uri) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            return acquireProviderClient(info);
         }
         return null;
     }
 
-    public int delete(Uri paramUri, String paramString, String[] paramArrayOfString) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
-                try {
-                    return contentProviderClient.delete(targetProviderInfo.uri, paramString, paramArrayOfString);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
-                }
-        }
-        return 0;
-    }
-
-    public String[] getStreamTypes(Uri paramUri, String paramString) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
-                try {
-                    return contentProviderClient.getStreamTypes(targetProviderInfo.uri, paramString);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
-                }
-        }
-        return null;
-    }
-
-    public String getType(Uri paramUri) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
-                try {
-                    return contentProviderClient.getType(targetProviderInfo.uri);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
-                }
-        }
-        return null;
-    }
-
-    public Uri insert(Uri paramUri, ContentValues paramContentValues) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
-                try {
-                    return contentProviderClient.insert(targetProviderInfo.uri, paramContentValues);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
-                }
-        }
-        return null;
-    }
-
+    @Override
     public boolean onCreate() {
         return true;
     }
 
-    public ParcelFileDescriptor openFile(Uri paramUri, String paramString) throws FileNotFoundException {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
+    @Override
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
                 try {
-                    return contentProviderClient.openFile(targetProviderInfo.uri, paramString);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
+                    return client.query(info.uri, projection, selection, selectionArgs, sortOrder);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
                 }
+            }
         }
         return null;
     }
 
-    public Cursor query(Uri paramUri, String[] paramArrayOfString1, String paramString1, String[] paramArrayOfString2, String paramString2) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
+    @Override
+    public String getType(Uri uri) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
                 try {
-                    return contentProviderClient.query(targetProviderInfo.uri, paramArrayOfString1, paramString1, paramArrayOfString2, paramString2);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
+                    return client.getType(info.uri);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
                 }
+            }
         }
         return null;
     }
 
-    public boolean refresh(Uri paramUri, Bundle paramBundle, CancellationSignal paramCancellationSignal) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
+    @Override
+    public Uri insert(Uri uri, ContentValues values) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
                 try {
-                    return contentProviderClient.refresh(targetProviderInfo.uri, paramBundle, paramCancellationSignal);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
+                    return client.insert(info.uri, values);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
                 }
+            }
         }
-        return false;
+        return null;
     }
 
-    public Uri uncanonicalize(Uri paramUri) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
+    @Override
+    public int delete(Uri uri, String selection, String[] selectionArgs) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
                 try {
-                    return contentProviderClient.uncanonicalize(targetProviderInfo.uri);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
+                    return client.delete(info.uri, selection, selectionArgs);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
                 }
-        }
-        return paramUri;
-    }
-
-    public int update(Uri paramUri, ContentValues paramContentValues, String paramString, String[] paramArrayOfString) {
-        TargetProviderInfo targetProviderInfo = getProviderProviderInfo(paramUri);
-        if (targetProviderInfo != null) {
-            ContentProviderClient contentProviderClient = acquireProviderClient(targetProviderInfo);
-            if (contentProviderClient != null)
-                try {
-                    return contentProviderClient.update(targetProviderInfo.uri, paramContentValues, paramString, paramArrayOfString);
-                } catch (RemoteException remoteException) {
-                    remoteException.printStackTrace();
-                }
+            }
         }
         return 0;
     }
 
-    private class TargetProviderInfo {
-        ProviderInfo info;
-
-        Uri uri;
-
-        int userId;
-
-        TargetProviderInfo(int param1Int, ProviderInfo param1ProviderInfo, Uri param1Uri) {
-            this.userId = param1Int;
-            this.info = param1ProviderInfo;
-            this.uri = param1Uri;
+    @Override
+    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
+                try {
+                    return client.update(info.uri, values, selection, selectionArgs);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
         }
+        return 0;
+    }
 
-        public String toString() {
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("TargetProviderInfo{userId=");
-            stringBuilder.append(this.userId);
-            stringBuilder.append(", info=");
-            stringBuilder.append(this.info);
-            stringBuilder.append(", uri=");
-            stringBuilder.append(this.uri);
-            stringBuilder.append('}');
-            return stringBuilder.toString();
+
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @Override
+    public Uri canonicalize(Uri uri) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
+                try {
+                    return client.canonicalize(info.uri);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
         }
+        return null;
+    }
+
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @Override
+    public Uri uncanonicalize(Uri uri) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
+                try {
+                    return client.uncanonicalize(info.uri);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return uri;
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    @Override
+    public boolean refresh(Uri uri, Bundle args, CancellationSignal cancellationSignal) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
+                try {
+                    return client.refresh(info.uri, args, cancellationSignal);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
+                try {
+                    return client.openFile(info.uri, mode);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
+
+    @Override
+    public String[] getStreamTypes(Uri uri, String mimeTypeFilter) {
+        TargetProviderInfo info = getProviderProviderInfo(uri);
+        if (info != null) {
+            ContentProviderClient client = acquireProviderClient(info);
+            if (client != null) {
+                try {
+                    return client.getStreamTypes(info.uri, mimeTypeFilter);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
     }
 }
