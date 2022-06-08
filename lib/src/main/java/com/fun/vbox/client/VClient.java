@@ -34,6 +34,7 @@ import com.fun.vbox.client.core.CrashHandler;
 import com.fun.vbox.client.core.InvocationStubManager;
 import com.fun.vbox.client.core.SettingConfig;
 import com.fun.vbox.client.core.VCore;
+import com.fun.vbox.client.env.SpecialComponentList;
 import com.fun.vbox.client.env.VirtualRuntime;
 import com.fun.vbox.client.fixer.ContextFixer;
 import com.fun.vbox.client.hook.delegate.AppInstrumentation;
@@ -73,6 +74,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import dalvik.system.DelegateLastClassLoader;
 import mirror.vbox.app.ActivityManagerNative;
 import mirror.vbox.app.ActivityThread;
 import mirror.vbox.app.ActivityThreadNMR1;
@@ -485,6 +487,7 @@ public final class VClient extends IVClient.Stub {
         }
         VMRuntime.setTargetSdkVersion
                 .call(VMRuntime.getRuntime.call(), data.appInfo.targetSdkVersion);
+
         Configuration configuration = context.getResources().getConfiguration();
         if (!is64Bit && info.flag == PackageSetting.FLAG_RUN_BOTH_32BIT_64BIT &&
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -554,6 +557,13 @@ public final class VClient extends IVClient.Stub {
         }
         */
 
+        /*  Android 12: Fix junit
+        ClassLoader cl = LoadedApk.getClassLoader.call(data.info);
+        if (BuildCompat.isS()) {
+            ClassLoader parent = cl.getParent();
+            Reflect.on(cl).set("parent", new DelegateLastClassLoader("/system/framework/android.test.base.jar", parent));
+        }
+*/
         try {
             mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
         } catch (Throwable e) {
