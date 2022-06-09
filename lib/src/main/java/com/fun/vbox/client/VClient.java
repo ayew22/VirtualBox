@@ -17,6 +17,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.Configuration;
+import android.graphics.Canvas;
 import android.os.Binder;
 import android.os.Build;
 import android.os.ConditionVariable;
@@ -560,6 +561,7 @@ public final class VClient extends IVClient.Stub {
                                 compatInfo);
             }
         }
+        fixSystem();
         VCore.get().getAppCallback().beforeStartApplication(packageName, processName, context);
         if (NetworkSecurityConfigProvider.install != null) {
             Security.removeProvider("AndroidNSSP");
@@ -653,6 +655,8 @@ public final class VClient extends IVClient.Stub {
         StaticReceiverSystem.get().attach(processName, context, data.appInfo, userId);
         VActivityManager.get().appDoneExecuting(info.packageName);
     }
+
+
 
     private void initDataStorage(boolean is64bit, int userId, String pkg) {
         // ensure dir created
@@ -1351,5 +1355,15 @@ public final class VClient extends IVClient.Stub {
                 }
             }
         }
+    }
+
+    private void fixSystem() {
+        if (BuildCompat.isS()) {
+            try {
+                Reflect.on((Class<?>) Canvas.class).call("setCompatibilityVersion", 26);
+            } catch (Exception e) {
+            }
+        }
+
     }
 }

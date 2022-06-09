@@ -1587,7 +1587,113 @@ public class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
+            Object obj = who;
+            Method method2 = method;
+            Object[] objArr = args;
             int nameIdx = getProviderNameIndex();
+            String name = (String) objArr[nameIdx];
+            if (name.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
+            } else if (name.startsWith(StubManifest.STUB_CP_AUTHORITY_64BIT)) {
+            } else if (name.equals(getConfig().get64bitHelperAuthority())) {
+            } else if (name.equals(getConfig().getBinderProviderAuthority())) {
+                int i = nameIdx;
+            } else {
+                VLog.w("VActivityManger", "getContentProvider:%s", name);
+                if (BuildCompat.isQ()) {
+                    int pkgIdx = nameIdx - 1;
+                    if (objArr[pkgIdx] instanceof String) {
+                        objArr[pkgIdx] = getHostPkg();
+                    }
+                }
+                int userId = VUserHandle.myUserId();
+                ProviderInfo info = VPackageManager.get().resolveContentProvider(name, 0, userId);
+                if (info != null && !info.enabled) {
+                    return null;
+                }
+                if (info == null || !isAppPkg(info.packageName)) {
+                    replaceLastUserId(args);
+                    Object holder = method2.invoke(obj, objArr);
+                    if (holder == null) {
+                        return null;
+                    }
+                    if (BuildCompat.isOreo()) {
+                        IInterface provider = ContentProviderHolderOreo.provider.get(holder);
+                        ProviderInfo info2 = ContentProviderHolderOreo.info.get(holder);
+                        if (provider != null) {
+                            provider = ProviderHook.createProxy(true, info2.authority, provider);
+                        }
+                        ContentProviderHolderOreo.provider.set(holder, provider);
+                    } else {
+                        IInterface provider2 = IActivityManager.ContentProviderHolder.provider.get(holder);
+                        ProviderInfo info3 = IActivityManager.ContentProviderHolder.info.get(holder);
+                        if (provider2 != null) {
+                            provider2 = ProviderHook.createProxy(true, info3.authority, provider2);
+                        }
+                        IActivityManager.ContentProviderHolder.provider.set(holder, provider2);
+                    }
+                    return holder;
+                }
+                ClientConfig config = VActivityManager.get().initProcess(info.packageName, info.processName, userId);
+                if (config == null) {
+                    VLog.e("ActivityManager", "failed to initProcess for provider: " + name);
+                    return null;
+                }
+                objArr[nameIdx] = StubManifest.getStubAuthority(config.vpid, config.is64Bit);
+                replaceLastUserId(args);
+                Object holder2 = method2.invoke(obj, objArr);
+                if (holder2 == null) {
+                    return null;
+                }
+                boolean maybeLoadingProvider = false;
+                if (BuildCompat.isOreo()) {
+                    IInterface provider3 = ContentProviderHolderOreo.provider.get(holder2);
+                    if (provider3 != null) {
+                        int i2 = nameIdx;
+                        provider3 = VActivityManager.get().acquireProviderClient(userId, info);
+                        if (BuildCompat.isS() && provider3 != null) {
+                            provider3 = ProviderHook.createProxy(false, name, provider3);
+                        }
+                    } else {
+                        maybeLoadingProvider = true;
+                    }
+                    if (provider3 != null) {
+                        ContentProviderHolderOreo.provider.set(holder2, provider3);
+                        ContentProviderHolderOreo.info.set(holder2, info);
+                    } else if (maybeLoadingProvider) {
+                        VLog.w("VActivityManager", "Loading provider: " + info.authority + "(" + info.processName + ")", new Object[0]);
+                        ContentProviderHolderOreo.info.set(holder2, info);
+                        return holder2;
+                    } else {
+                        VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority + "(" + info.processName + ")");
+                        return null;
+                    }
+                } else {
+                    IInterface provider4 = IActivityManager.ContentProviderHolder.provider.get(holder2);
+                    if (provider4 != null) {
+                        provider4 = VActivityManager.get().acquireProviderClient(userId, info);
+                    } else {
+                        maybeLoadingProvider = true;
+                    }
+                    if (provider4 != null) {
+                        IActivityManager.ContentProviderHolder.provider.set(holder2, provider4);
+                        IActivityManager.ContentProviderHolder.info.set(holder2, info);
+                    } else if (!maybeLoadingProvider) {
+                        VLog.e("VActivityManager", "acquireProviderClient fail: " + info.authority + "(" + info.processName + ")");
+                        return null;
+                    } else if (!BuildCompat.isMIUI() || !miuiProviderWaitingTargetProcess(holder2)) {
+                        return null;
+                    } else {
+                        VLog.w("VActivityManager", "miui provider waiting process: " + info.authority + "(" + info.processName + ")", new Object[0]);
+                        return null;
+                    }
+                }
+                return holder2;
+            }
+            replaceLastUserId(args);
+            return method2.invoke(obj, objArr);
+
+
+           /* int nameIdx = getProviderNameIndex();
             String name = (String) args[nameIdx];
 
             if ((name.startsWith(StubManifest.STUB_CP_AUTHORITY)
@@ -1675,7 +1781,7 @@ public class MethodProxies {
                 }
                 return holder;
             }
-            return null;
+            return null;*/
         }
 
         public int getProviderNameIndex() {
@@ -1689,6 +1795,14 @@ public class MethodProxies {
         public boolean isEnable() {
             return isAppProcess() || isServerProcess();
         }
+
+        private boolean miuiProviderWaitingTargetProcess(Object providerHolder) {
+            if (providerHolder == null || IActivityManager.ContentProviderHolderMIUI.waitProcessStart == null) {
+                return false;
+            }
+            return IActivityManager.ContentProviderHolderMIUI.waitProcessStart.get(providerHolder);
+        }
+
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)

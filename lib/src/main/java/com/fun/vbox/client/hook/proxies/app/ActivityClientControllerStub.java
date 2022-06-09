@@ -9,6 +9,7 @@ import com.fun.vbox.client.core.VCore;
 import com.fun.vbox.client.hook.annotations.Inject;
 import com.fun.vbox.client.hook.base.MethodInvocationProxy;
 import com.fun.vbox.client.hook.base.MethodInvocationStub;
+import com.fun.vbox.client.hook.base.MethodProxy;
 import com.fun.vbox.client.hook.base.StaticMethodProxy;
 import com.fun.vbox.client.hook.proxies.am.MethodProxies;
 import com.fun.vbox.client.ipc.VActivityManager;
@@ -36,44 +37,41 @@ public class ActivityClientControllerStub extends MethodInvocationProxy<MethodIn
 
     public void inject() {
         if (ActivityClient.INTERFACE_SINGLETON != null) {
-            if (ActivityClient.ActivityClientControllerSingleton.mKnownInstance != null)
-                ActivityClient.ActivityClientControllerSingleton.mKnownInstance.set(ActivityClient.INTERFACE_SINGLETON.get(), getInvocationStub().getProxyInterface());
+            if (ActivityClient.ActivityClientControllerSingleton.mKnownInstance != null) {
+                ActivityClient.ActivityClientControllerSingleton.mKnownInstance.set(ActivityClient.INTERFACE_SINGLETON.get(), (IInterface) getInvocationStub().getProxyInterface());
+            }
             Singleton.mInstance.set(ActivityClient.INTERFACE_SINGLETON.get(), getInvocationStub().getProxyInterface());
-            sActivityClientControllerProxy = getInvocationStub().getProxyInterface();
+            sActivityClientControllerProxy = (IInterface) getInvocationStub().getProxyInterface();
         }
+
     }
 
     public boolean isEnvBad() {
-        RefStaticMethod refStaticMethod = ActivityClient.getActivityClientController;
-        boolean bool = false;
-        if (refStaticMethod.call(new Object[0]) != getInvocationStub().getProxyInterface())
-            bool = true;
-        return bool;
+        return ActivityClient.getActivityClientController.call(new Object[0]) != getInvocationStub().getProxyInterface();
     }
 
-    protected void onBindMethods() {
+    public void onBindMethods() {
         super.onBindMethods();
-        addMethodProxy(new StaticMethodProxy("activityDestroyed") {
+        addMethodProxy((MethodProxy) new StaticMethodProxy("activityDestroyed") {
             public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
-                IBinder iBinder = (IBinder) args[0];
-                VActivityManager.get().onActivityDestroy(iBinder);
+                VActivityManager.get().onActivityDestroy((IBinder) args[0]);
                 return super.afterCall(who, method, args, result);
             }
         });
-        addMethodProxy(new StaticMethodProxy("activityResumed") {
+        addMethodProxy((MethodProxy) new StaticMethodProxy("activityResumed") {
             public Object call(Object who, Method method, Object... args) throws Throwable {
-                IBinder iBinder = (IBinder) args[0];
-                VActivityManager.get().onActivityResumed(iBinder);
+                VActivityManager.get().onActivityResumed((IBinder) args[0]);
                 return super.call(who, method, args);
             }
         });
-        addMethodProxy(new StaticMethodProxy("finishActivity") {
+        addMethodProxy((MethodProxy) new StaticMethodProxy("finishActivity") {
             public Object call(Object who, Method method, Object... args) throws Throwable {
-                IBinder iBinder = (IBinder) args[0];
+                IBinder token = (IBinder) args[0];
                 Intent intent = (Intent) args[2];
-                if (intent != null)
+                if (intent != null) {
                     args[2] = ComponentUtils.processOutsideIntent(VUserHandle.myUserId(), VCore.get().isExtPackage(), intent);
-                VActivityManager.get().onFinishActivity(iBinder);
+                }
+                VActivityManager.get().onFinishActivity(token);
                 return super.call(who, method, args);
             }
 
@@ -81,21 +79,22 @@ public class ActivityClientControllerStub extends MethodInvocationProxy<MethodIn
                 return isAppProcess();
             }
         });
-        addMethodProxy(new StaticMethodProxy("finishActivityAffinity") {
+        addMethodProxy((MethodProxy) new StaticMethodProxy("finishActivityAffinity") {
             public Object call(Object who, Method method, Object... args) {
-                who = args[0];
-                return Boolean.valueOf(VActivityManager.get().finishActivityAffinity(getAppUserId(), (IBinder) who));
+                return Boolean.valueOf(VActivityManager.get().finishActivityAffinity(getAppUserId(), (IBinder) args[0]));
             }
 
             public boolean isEnable() {
                 return isAppProcess();
             }
         });
-        if (BuildCompat.isSamsung())
-            addMethodProxy(new StaticMethodProxy("startAppLockService") {
+        if (BuildCompat.isSamsung()) {
+            addMethodProxy((MethodProxy) new StaticMethodProxy("startAppLockService") {
                 public Object call(Object who, Method method, Object... args) {
-                    return Integer.valueOf(0);
+                    return 0;
                 }
             });
+        }
     }
+
 }
