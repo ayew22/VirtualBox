@@ -56,7 +56,7 @@ public class ActivityThread {
     public static RefMethod<ActivityClientRecord> getLaunchingActivity;
     public static RefMethod<Object> getPackageInfoNoCheck;
 
-    public static RefMethod<Void> handleNewIntent;
+//    public static RefMethod<Void> handleNewIntent;
 
 /*
 
@@ -75,6 +75,22 @@ public class ActivityThread {
         }
     }
 */
+    public static void handleNewIntent(Object obj, List list) {
+        try {
+            Object currentActivityThread2 = currentActivityThread.call(new Object[0]);
+            if (currentActivityThread2 != null) {
+                Method declaredMethod = currentActivityThread2.getClass().getDeclaredMethod("handleNewIntent", new Class[]{obj.getClass(), List.class});
+                Method declaredMethod2 = declaredMethod;
+                if (declaredMethod != null) {
+                    declaredMethod2.setAccessible(true);
+                    declaredMethod2.invoke(currentActivityThread2, new Object[]{obj, list});
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
 

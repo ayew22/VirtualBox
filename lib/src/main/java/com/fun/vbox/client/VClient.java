@@ -52,6 +52,7 @@ import com.fun.vbox.helper.compat.BuildCompat;
 import com.fun.vbox.helper.compat.NativeLibraryHelperCompat;
 import com.fun.vbox.helper.compat.StorageManagerCompat;
 import com.fun.vbox.helper.compat.StrictModeCompat;
+import com.fun.vbox.helper.utils.ComponentUtils;
 import com.fun.vbox.helper.utils.Reflect;
 import com.fun.vbox.helper.utils.VLog;
 import com.fun.vbox.os.VEnvironment;
@@ -262,6 +263,29 @@ public final class VClient extends IVClient.Stub {
 
     private void handleNewIntent(NewIntentData data) {
         Intent intent;
+        ComponentUtils.unpackFillIn(data.intent, get().getClassLoader());
+        if (Build.VERSION.SDK_INT >= 22) {
+            intent = ReferrerIntent.ctor.newInstance(data.intent, data.creator);
+        } else {
+            intent = data.intent;
+        }
+        if (ActivityThread.performNewIntents != null) {
+            ActivityThread.performNewIntents.call(VCore.mainThread(), data.token, Collections.singletonList(intent));
+        } else if (ActivityThreadNMR1.performNewIntents != null) {
+            ActivityThreadNMR1.performNewIntents.call(VCore.mainThread(), data.token, Collections.singletonList(intent), true);
+        } else if (BuildCompat.isS()) {
+            Object obj = ActivityThread.mActivities.get(VCore.mainThread()).get(data.token);
+            if (obj != null) {
+                ActivityThread.handleNewIntent(obj, Collections.singletonList(intent));
+            }
+        } else {
+            ActivityThreadQ.handleNewIntent.call(VCore.mainThread(), data.token, Collections.singletonList(intent));
+        }
+
+
+        /*
+
+        Intent intent;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
             intent = ReferrerIntent.ctor.newInstance(data.intent, data.creator);
         } else {
@@ -283,14 +307,23 @@ public final class VClient extends IVClient.Stub {
 //            data = (NewIntentData)(ActivityThread.mActivities.get(VCore.mainThread())).get(data.token);//todo  android.app.ActivityThread$ActivityClientRecord cannot be cast to com.fun.vbox.client.VClient$NewIntentData
 //            if (data != null)
 //                ActivityThread.handleNewIntent(data, Collections.singletonList(intent));
-            Map activities = ActivityThread.mActivities.get(ActivityThread.currentActivityThread.call(null));
-            ActivityThread.handleNewIntent.call(VCore.mainThread(), activities.get(data.token), Collections.singletonList(intent));
+//            Map activities = ActivityThread.mActivities.get(ActivityThread.currentActivityThread.call(null));
+//            ActivityThread.handleNewIntent.call(VCore.mainThread(), activities.get(data.token), Collections.singletonList(intent));
+
+
+            Object obj = ActivityThread.mActivities.get(VCore.mainThread()).get(data.token);
+            if (obj != null) {
+                ActivityThread.handleNewIntent(obj, Collections.singletonList(intent));
+            }
+
         } else {
             ActivityThreadQ.handleNewIntent.call(
                     VCore.mainThread(),
                     data.token,
                     Collections.singletonList(intent));
         }
+
+        */
     }
 
     public void bindApplication(final String packageName, final String processName) {
@@ -557,15 +590,16 @@ public final class VClient extends IVClient.Stub {
         }
         */
 
-        /*  Android 12: Fix junit
-        ClassLoader cl = LoadedApk.getClassLoader.call(data.info);
+         // Android 12: Fix junit
+        // ClassLoaderContext type mismatch. expected=PCL, found=DLC (PCL[] | DLC[])  这样会有警告
+/*        ClassLoader cl = LoadedApk.getClassLoader.call(data.info);
         if (BuildCompat.isS()) {
             ClassLoader parent = cl.getParent();
             Reflect.on(cl).set("parent", new DelegateLastClassLoader("/system/framework/android.test.base.jar", parent));
-        }
-*/
+        }*/
+
         try {
-            mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
+            mInitialApplication = LoadedApk.makeApplication.callWithException(data.info, false, null);
         } catch (Throwable e) {
             throw new RuntimeException("Unable to makeApplication", e);
         }

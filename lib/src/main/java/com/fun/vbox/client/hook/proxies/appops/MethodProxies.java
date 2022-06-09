@@ -12,86 +12,88 @@ import java.lang.reflect.Method;
 import mirror.vbox.content.AttributionSource;
 
 public class MethodProxies {
-    public static Object checkAudioOperation(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        replaceUidAndPackage(paramArrayOfObject, 3);
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object checkOperation(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        replaceUidAndPackage(paramArrayOfObject, 2);
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object checkOperationRaw(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        replaceUidAndPackage(paramArrayOfObject, 2);
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object checkPackage(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        if (GmsSupport.isGoogleAppOrService((String)paramArrayOfObject[1]))
-            return Integer.valueOf(0);
-        replaceUidAndPackage(paramArrayOfObject, 1);
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object extractAsyncOps(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        paramArrayOfObject[0] = VCore.get().getHostPkg();
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object finishOperation(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        replaceUidAndPackage(paramArrayOfObject, 3);
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object getOpsForPackage(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        replaceUidAndPackage(paramArrayOfObject, 1);
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object getPackagesForOps(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object noteOperation(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        replaceUidAndPackage(paramArrayOfObject, 2);
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
-    }
-
-    public static Object noteProxyOperation(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        if (BuildCompat.isS()) {
-            int i = MethodParameterUtils.getIndex(paramArrayOfObject, AttributionSource.TYPE);
-            if (i >= 0)
-            return new SyncNotedAppOp(0, AttributionSource.getAttributionTag.call(paramArrayOfObject[i]));
-
+    private static void replaceUidAndPackage(Object[] args, int pkgIndex) {
+        args[pkgIndex] = VCore.get().getHostPkg();
+        int uidIndex = pkgIndex - 1;
+        if (args[pkgIndex - 1] instanceof Integer) {
+            args[uidIndex] = Integer.valueOf(VCore.get().myUid());
         }
-        return Integer.valueOf(0);
     }
 
-    private static void replaceUidAndPackage(Object[] paramArrayOfObject, int paramInt) {
-        paramArrayOfObject[paramInt] = VCore.get().getHostPkg();
-        if (paramArrayOfObject[--paramInt] instanceof Integer)
-            paramArrayOfObject[paramInt] = Integer.valueOf(VCore.get().myUid());
+    public static Object checkAudioOperation(Object who, Method method, Object[] args) throws Throwable {
+        replaceUidAndPackage(args, 3);
+        return method.invoke(who, args);
     }
 
-    public static Object resetAllModes(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        paramArrayOfObject[0] = Integer.valueOf(0);
-        paramArrayOfObject[1] = VCore.get().getHostPkg();
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
+    public static Object checkOperation(Object who, Method method, Object[] args) throws Throwable {
+        replaceUidAndPackage(args, 2);
+        return method.invoke(who, args);
     }
 
-    public static Object startOperation(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        replaceUidAndPackage(paramArrayOfObject, 3);
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
+    public static Object checkPackage(Object who, Method method, Object[] args) throws Throwable {
+        if (GmsSupport.isGoogleAppOrService((String) args[1])) {
+            return 0;
+        }
+        replaceUidAndPackage(args, 1);
+        return method.invoke(who, args);
     }
 
-    public static Object startWatchingAsyncNoted(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        paramArrayOfObject[0] = VCore.get().getHostPkg();
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
+    public static Object getOpsForPackage(Object who, Method method, Object[] args) throws Throwable {
+        replaceUidAndPackage(args, 1);
+        return method.invoke(who, args);
     }
 
-    public static Object stopWatchingAsyncNoted(Object paramObject, Method paramMethod, Object[] paramArrayOfObject) throws Throwable {
-        paramArrayOfObject[0] = VCore.get().getHostPkg();
-        return paramMethod.invoke(paramObject, paramArrayOfObject);
+    public static Object getPackagesForOps(Object who, Method method, Object[] args) throws Throwable {
+        return method.invoke(who, args);
     }
+
+    public static Object noteOperation(Object who, Method method, Object[] args) throws Throwable {
+        replaceUidAndPackage(args, 2);
+        return method.invoke(who, args);
+    }
+
+    public static Object noteProxyOperation(Object who, Method method, Object[] args) throws Throwable {
+        int index;
+        if (!BuildCompat.isS() || (index = MethodParameterUtils.getIndex(args, AttributionSource.TYPE)) < 0) {
+            return 0;
+        }
+        return new SyncNotedAppOp(0, AttributionSource.getAttributionTag(args[index]));
+    }
+
+    public static Object resetAllModes(Object who, Method method, Object[] args) throws Throwable {
+        args[0] = 0;
+        args[1] = VCore.get().getHostPkg();
+        return method.invoke(who, args);
+    }
+
+    public static Object startOperation(Object who, Method method, Object[] args) throws Throwable {
+        replaceUidAndPackage(args, 3);
+        return method.invoke(who, args);
+    }
+
+    public static Object finishOperation(Object who, Method method, Object[] args) throws Throwable {
+        replaceUidAndPackage(args, 3);
+        return method.invoke(who, args);
+    }
+
+    public static Object checkOperationRaw(Object who, Method method, Object[] args) throws Throwable {
+        replaceUidAndPackage(args, 2);
+        return method.invoke(who, args);
+    }
+
+    public static Object startWatchingAsyncNoted(Object who, Method method, Object[] args) throws Throwable {
+        args[0] = VCore.get().getHostPkg();
+        return method.invoke(who, args);
+    }
+
+    public static Object stopWatchingAsyncNoted(Object who, Method method, Object[] args) throws Throwable {
+        args[0] = VCore.get().getHostPkg();
+        return method.invoke(who, args);
+    }
+
+    public static Object extractAsyncOps(Object who, Method method, Object[] args) throws Throwable {
+        args[0] = VCore.get().getHostPkg();
+        return method.invoke(who, args);
+    }
+
 }

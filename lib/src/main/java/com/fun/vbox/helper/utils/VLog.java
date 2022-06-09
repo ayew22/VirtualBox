@@ -10,7 +10,7 @@ import java.util.Set;
 @Keep
 public class VLog {
 
-    public static boolean OPEN_LOG = false;
+    public static boolean OPEN_LOG = true;
 
     public static void i(String tag, String msg, Object... format) {
         if (OPEN_LOG) {

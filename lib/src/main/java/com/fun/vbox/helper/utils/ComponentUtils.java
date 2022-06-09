@@ -9,6 +9,7 @@ import android.content.pm.ComponentInfo;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Process;
 import android.text.TextUtils;
 
@@ -289,4 +290,34 @@ public class ComponentUtils {
         uri = ContentProviderProxy.buildProxyUri(userId, is64bit, authority, uri);
         return uri;
     }
+
+
+    public static void unpackFillIn(Intent intent, ClassLoader classLoader) {
+        intent.setExtrasClassLoader(classLoader);
+        try {
+            Bundle extras = intent.getExtras();
+            if (extras != null) {
+                Bundle fillIn = extras.getBundle("_VBOX_|_fill_in_");
+                Bundle base = extras.getBundle("_VBOX_|_base_");
+                if (fillIn != null || base != null) {
+                    if (fillIn != null) {
+                        fillIn.setClassLoader(classLoader);
+                    }
+                    if (base != null) {
+                        base.setClassLoader(classLoader);
+                    }
+                    if (!(fillIn == null || base == null)) {
+                        fillIn.putAll(base);
+                    }
+                    if (fillIn == null) {
+                        fillIn = base;
+                    }
+                    intent.replaceExtras(fillIn);
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
 }

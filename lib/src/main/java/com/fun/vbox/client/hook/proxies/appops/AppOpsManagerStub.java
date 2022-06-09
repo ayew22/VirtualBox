@@ -1,20 +1,14 @@
 package com.fun.vbox.client.hook.proxies.appops;
 
 import android.annotation.TargetApi;
-import android.app.AppOpsManager;
 import android.content.Context;
 import android.os.Build;
+import android.os.IInterface;
 
 import com.fun.vbox.client.core.VCore;
 import com.fun.vbox.client.hook.annotations.Inject;
 import com.fun.vbox.client.hook.base.BinderInvocationProxy;
-import com.fun.vbox.client.hook.base.MethodProxy;
-import com.fun.vbox.client.hook.base.ReplaceCallingPkgMethodProxy;
-import com.fun.vbox.client.hook.base.ReplaceLastPkgMethodProxy;
-import com.fun.vbox.client.hook.base.StaticMethodProxy;
-import com.fun.vbox.helper.compat.BuildCompat;
-
-import java.lang.reflect.Method;
+import com.fun.vbox.client.hook.base.BinderInvocationStub;
 
 import mirror.com.android.internal.app.IAppOpsService;
 
@@ -25,15 +19,15 @@ import mirror.com.android.internal.app.IAppOpsService;
  * @see android.app.AppOpsManager
  */
 @TargetApi(Build.VERSION_CODES.KITKAT)
-//@Inject(MethodProxies.class)
+@Inject(MethodProxies.class)
 public class AppOpsManagerStub extends BinderInvocationProxy {
 
     public AppOpsManagerStub() {
         super(IAppOpsService.Stub.asInterface, Context.APP_OPS_SERVICE);
     }
 
-    @Override
-    public void inject() throws Throwable {
+
+    /*public void inject() throws Throwable {
         super.inject();
         if (mirror.vbox.app.AppOpsManager.mService != null) {
             AppOpsManager appOpsManager = (AppOpsManager) VCore.get().getContext().getSystemService(Context.APP_OPS_SERVICE);
@@ -44,11 +38,25 @@ public class AppOpsManagerStub extends BinderInvocationProxy {
             }
         }
     }
+*/
+    @Override
+    public void inject() throws Throwable {
+        super.inject();
+        if (mirror.vbox.app.AppOpsManager.mService != null) {
+            try {
+                mirror.vbox.app.AppOpsManager.mService.set((android.app.AppOpsManager) VCore.get().getContext().getSystemService(Context.APP_OPS_SERVICE), (IInterface) ((BinderInvocationStub) getInvocationStub()).getProxyInterface());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
 
     @Override
     protected void onBindMethods() {
         super.onBindMethods();
-
+/*
         addMethodProxy(new BaseMethodProxy("checkOperation", 1, 2));
         addMethodProxy(new BaseMethodProxy("noteOperation", 1, 2));
         addMethodProxy(new BaseMethodProxy("startOperation", 2, 3));
@@ -111,7 +119,7 @@ public class AppOpsManagerStub extends BinderInvocationProxy {
                 args[uidIndex] = getRealUid();
             }
             return true;
-        }
+        }*/
     }
 
 }
