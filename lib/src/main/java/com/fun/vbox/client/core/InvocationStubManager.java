@@ -20,10 +20,13 @@ import com.fun.vbox.client.hook.proxies.backup.BackupManagerStub;
 import com.fun.vbox.client.hook.proxies.battery_stats.BatteryStatsHub;
 import com.fun.vbox.client.hook.proxies.bluetooth.BluetoothStub;
 import com.fun.vbox.client.hook.proxies.clipboard.ClipBoardStub;
+import com.fun.vbox.client.hook.proxies.clipboard.SemClipBoardStub;
 import com.fun.vbox.client.hook.proxies.connectivity.ConnectivityStub;
 import com.fun.vbox.client.hook.proxies.content.ContentServiceStub;
 import com.fun.vbox.client.hook.proxies.content.integrity.AppIntegrityManagerStub;
 import com.fun.vbox.client.hook.proxies.context_hub.ContextHubServiceStub;
+import com.fun.vbox.client.hook.proxies.cross_profile.CrossProfileAppsStub;
+import com.fun.vbox.client.hook.proxies.device.DeviceIdleControllerStub;
 import com.fun.vbox.client.hook.proxies.devicepolicy.DevicePolicyManagerStub;
 import com.fun.vbox.client.hook.proxies.display.DisplayStub;
 import com.fun.vbox.client.hook.proxies.dropbox.DropBoxManagerStub;
@@ -34,6 +37,7 @@ import com.fun.vbox.client.hook.proxies.input.InputMethodManagerStub;
 import com.fun.vbox.client.hook.proxies.isms.ISmsStub;
 import com.fun.vbox.client.hook.proxies.isub.ISubStub;
 import com.fun.vbox.client.hook.proxies.job.JobServiceStub;
+import com.fun.vbox.client.hook.proxies.libcore.LibCoreStub;
 import com.fun.vbox.client.hook.proxies.location.LocationManagerStub;
 import com.fun.vbox.client.hook.proxies.media.router.MediaRouterServiceStub;
 import com.fun.vbox.client.hook.proxies.media.session.SessionManagerStub;
@@ -50,8 +54,10 @@ import com.fun.vbox.client.hook.proxies.phonesubinfo.PhoneSubInfoStub;
 import com.fun.vbox.client.hook.proxies.pm.PackageManagerStub;
 import com.fun.vbox.client.hook.proxies.power.PowerManagerStub;
 import com.fun.vbox.client.hook.proxies.restriction.RestrictionStub;
+import com.fun.vbox.client.hook.proxies.role.RoleManagerStub;
 import com.fun.vbox.client.hook.proxies.search.SearchManagerStub;
 import com.fun.vbox.client.hook.proxies.shortcut.ShortcutServiceStub;
+import com.fun.vbox.client.hook.proxies.slice.SliceManagerStub;
 import com.fun.vbox.client.hook.proxies.storage_stats.StorageStatsStub;
 import com.fun.vbox.client.hook.proxies.system.LockSettingsStub;
 import com.fun.vbox.client.hook.proxies.system.SystemUpdateStub;
@@ -66,6 +72,7 @@ import com.fun.vbox.client.hook.proxies.user.UserManagerStub;
 import com.fun.vbox.client.hook.proxies.vibrator.VibratorStub;
 import com.fun.vbox.client.hook.proxies.vibrator.VibratorStubForS;
 import com.fun.vbox.client.hook.proxies.view.AutoFillManagerStub;
+import com.fun.vbox.client.hook.proxies.wallpaper.WallpaperManagerStub;
 import com.fun.vbox.client.hook.proxies.wifi.WifiManagerStub;
 import com.fun.vbox.client.hook.proxies.window.WindowManagerStub;
 import com.fun.vbox.client.interfaces.IInjector;
@@ -76,7 +83,9 @@ import java.util.Map;
 
 import mirror.com.android.internal.app.ISmtOpsService;
 import mirror.com.android.internal.telephony.IHwTelephony;
+import mirror.oem.IFlymePermissionService;
 import mirror.vbox.app.UriGrantsManager;
+import mirror.vbox.os.IDeviceIdleController;
 
 import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
 import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
@@ -131,65 +140,45 @@ public final class InvocationStubManager {
     }
 
     private void injectInternal() throws Throwable {
-        if (VCore.get().isMainProcess()) {
-            return;
-        }
-        if (VCore.get().isServerProcess()) {
-            addInjector(new ActivityManagerStub());
-            addInjector(new PackageManagerStub());
-            return;
-        }
-        if (VCore.get().isVAppProcess()) {
-            //addInjector(new LibCoreStub());
-            addInjector(new ActivityManagerStub());
-            addInjector(new PackageManagerStub());
-            addInjector(HCallbackStub.getDefault());
-            addInjector(new ISmsStub());
-            addInjector(new ISubStub());
-            addInjector(new DropBoxManagerStub());
-            addInjector(new NotificationManagerStub());
-            addInjector(new LocationManagerStub());
-            addInjector(new WindowManagerStub());
-            addInjector(new ClipBoardStub());
-            addInjector(new MountServiceStub());
-            addInjector(new BackupManagerStub());
-            addInjector(new TelephonyStub());
-            addInjector(new AccessibilityManagerStub());
-            if (BuildCompat.isOreo()) {
-                if (IHwTelephony.TYPE != null) {
+        if (!VCore.get().isMainProcess()) {
+            if (VCore.get().isServerProcess()) {
+                addInjector(new ActivityManagerStub());
+            } else if (VCore.get().isVAppProcess()) {
+//                addInjector(new LibCoreStub());
+                addInjector(new ActivityManagerStub());
+                addInjector(new PackageManagerStub());
+                addInjector(HCallbackStub.getDefault());
+                addInjector(new ISmsStub());
+                addInjector(new ISubStub());
+                addInjector(new DropBoxManagerStub());
+                addInjector(new NotificationManagerStub());
+                addInjector(new LocationManagerStub());
+                addInjector(new WindowManagerStub());
+                addInjector(new ClipBoardStub());
+                addInjector(new SemClipBoardStub());
+                addInjector(new MountServiceStub());
+                addInjector(new BackupManagerStub());
+                addInjector(new TelephonyStub());
+                addInjector(new AccessibilityManagerStub());
+                if (BuildCompat.isOreo() && IHwTelephony.TYPE != null) {
                     addInjector(new HwTelephonyStub());
                 }
-            }
-            addInjector(new TelephonyRegistryStub());
-            addInjector(new PhoneSubInfoStub());
-            addInjector(new PowerManagerStub());
-            addInjector(new AppWidgetManagerStub());
-            addInjector(new AccountManagerStub());
-            addInjector(new AudioManagerStub());
-            addInjector(new SearchManagerStub());
-            addInjector(new ContentServiceStub());
-            addInjector(new ConnectivityStub());
-            addInjector(new BluetoothStub());
-
-            if (Build.VERSION.SDK_INT >= 31) {
-                addInjector(new VibratorStubForS());
-            } else {
+                addInjector(new TelephonyRegistryStub());
+                addInjector(new PhoneSubInfoStub());
+                addInjector(new PowerManagerStub());
+                addInjector(new AppWidgetManagerStub());
+                addInjector(new AccountManagerStub());
+                addInjector(new AudioManagerStub());
+                addInjector(new SearchManagerStub());
+                addInjector(new ContentServiceStub());
+                addInjector(new ConnectivityStub());
+                addInjector(new BluetoothStub());
                 addInjector(new VibratorStub());
-            }
-            if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR2) {
-//                addInjector(new VibratorStub());
                 addInjector(new WifiManagerStub());
                 addInjector(new ContextHubServiceStub());
-            }
-
-            if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR1) {
                 addInjector(new UserManagerStub());
-            }
-
-            if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR1) {
+                addInjector(new WallpaperManagerStub());
                 addInjector(new DisplayStub());
-            }
-            if (Build.VERSION.SDK_INT >= LOLLIPOP) {
                 addInjector(new PersistentDataBlockServiceStub());
                 addInjector(new InputMethodManagerStub());
                 addInjector(new MmsStub());
@@ -197,60 +186,63 @@ public final class InvocationStubManager {
                 addInjector(new JobServiceStub());
                 addInjector(new RestrictionStub());
                 addInjector(new TelecomManagerStub());
-            }
-            if (Build.VERSION.SDK_INT >= KITKAT) {
                 addInjector(new AlarmManagerStub());
                 addInjector(new AppOpsManagerStub());
                 addInjector(new MediaRouterServiceStub());
                 if (ISmtOpsService.TYPE != null) {
                     addInjector(new SmtOpsManagerStub());
                 }
-            }
-            if (Build.VERSION.SDK_INT >= LOLLIPOP_MR1) {
-                addInjector(new GraphicsStatsStub());
-                addInjector(new UsageStatsManagerStub());
-            }
-            if (Build.VERSION.SDK_INT >= M) {
-                addInjector(new FingerprintManagerStub());
-                addInjector(new NetworkManagementStub());
-            }
-            if (Build.VERSION.SDK_INT >= N) {
-                addInjector(new WifiScannerStub());
-                addInjector(new ShortcutServiceStub());
-                addInjector(new DevicePolicyManagerStub());
-                addInjector(new BatteryStatsHub());
-            }
-            if (BuildCompat.isOreo()) {
-                addInjector(new AutoFillManagerStub());
-                addInjector(new StorageStatsStub());
-            }
-            if (BuildCompat.isPie()) {
-                addInjector(new SystemUpdateStub());
-                addInjector(new LockSettingsStub());
-            }
-            if (mirror.oem.IFlymePermissionService.TYPE != null) {
-                addInjector(new FlymePermissionServiceStub());
-            }
-            if (BuildCompat.isQ()) {
-                addInjector(new ActivityTaskManagerStub());
-                addInjector(new DeviceIdentifiersPolicyServiceHub());
-            }
-            if (BuildCompat.isR()) {
-                addInjector(new PermissionManagerStub());
-                addInjector(new AppIntegrityManagerStub());
-                addInjector(new StatsManagerServiceStub());
-                addInjector(new TetheringConnectorStub());
-            }
-            if (BuildCompat.isS()){
-                addInjector(new ActivityClientControllerStub());
-             }
-            if (UriGrantsManager.getService != null) {
-                addInjector(new UriGrantsManagerStub());
+                if (Build.VERSION.SDK_INT >= 22) {
+                    addInjector(new GraphicsStatsStub());
+                    addInjector(new UsageStatsManagerStub());
+                }
+                if (Build.VERSION.SDK_INT >= 23) {
+                    addInjector(new FingerprintManagerStub());
+                    addInjector(new NetworkManagementStub());
+                }
+                if (Build.VERSION.SDK_INT >= 24) {
+                    addInjector(new WifiScannerStub());
+                    addInjector(new ShortcutServiceStub());
+                    addInjector(new DevicePolicyManagerStub());
+                    addInjector(new BatteryStatsHub());
+                }
+                if (BuildCompat.isOreo()) {
+                    addInjector(new AutoFillManagerStub());
+                }
+                if (BuildCompat.isPie()) {
+                    addInjector(new SystemUpdateStub());
+                    addInjector(new LockSettingsStub());
+                    addInjector(new CrossProfileAppsStub());
+                    addInjector(new SliceManagerStub());
+                }
+                if (IFlymePermissionService.TYPE != null) {
+                    addInjector(new FlymePermissionServiceStub());
+                }
+                if (BuildCompat.isQ()) {
+                    addInjector(new ActivityTaskManagerStub());
+                    addInjector(new DeviceIdentifiersPolicyServiceHub());
+                    addInjector(new UriGrantsManagerStub());
+                    addInjector(new RoleManagerStub());
+                }
+                if (BuildCompat.isR()) {
+                    addInjector(new PermissionManagerStub());
+                    addInjector(new AppIntegrityManagerStub());
+                    addInjector(new StatsManagerServiceStub());
+                    addInjector(new TetheringConnectorStub());
+                }
+                if (BuildCompat.isS()) {
+                    addInjector(new ActivityClientControllerStub());
+                }
+                if (IDeviceIdleController.TYPE != null) {
+                    addInjector(new DeviceIdleControllerStub());
+                }
+                OemInjectManager.oemInject(this);
             }
         }
+
     }
 
-    private void addInjector(IInjector IInjector) {
+    public void addInjector(IInjector IInjector) {
         mInjectors.put(IInjector.getClass(), IInjector);
     }
 
